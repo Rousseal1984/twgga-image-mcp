@@ -49,7 +49,6 @@ def test_rust_supports_the_stateless_2026_07_28_lifecycle() -> None:
             assert info["result"]["resultType"] == "complete"
             assert text_content_json(info)["available_models"] == [
                 "gpt-image-2",
-                "gpt-image-2-openai",
             ]
         assert all(line.lstrip().startswith(b"{") for line in session.stdout_lines)
 

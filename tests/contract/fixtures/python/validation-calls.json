@@ -39,15 +39,15 @@
     "result": {
       "content": [
         {
-          "text": "{\n  \"ok\": false,\n  \"error\": \"image_path 不存在: /definitely/missing.png\",\n  \"errors\": [\n    \"image_path 不存在: /definitely/missing.png\"\n  ]\n}",
+          "text": "{\n  \"ok\": false,\n  \"error\": \"image_path 不存在: \\\\definitely\\\\missing.png\",\n  \"errors\": [\n    \"image_path 不存在: \\\\definitely\\\\missing.png\"\n  ]\n}",
           "type": "text"
         }
       ],
       "isError": false,
       "structuredContent": {
-        "error": "image_path 不存在: /definitely/missing.png",
+        "error": "image_path 不存在: \\definitely\\missing.png",
         "errors": [
-          "image_path 不存在: /definitely/missing.png"
+          "image_path 不存在: \\definitely\\missing.png"
         ],
         "ok": false
       }
@@ -99,15 +99,15 @@
     "result": {
       "content": [
         {
-          "text": "{\n  \"ok\": false,\n  \"error\": \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。\",\n  \"errors\": [\n    \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。\"\n  ]\n}",
+          "text": "{\n  \"ok\": false,\n  \"error\": \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。\",\n  \"errors\": [\n    \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。\"\n  ]\n}",
           "type": "text"
         }
       ],
       "isError": false,
       "structuredContent": {
-        "error": "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。",
+        "error": "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。",
         "errors": [
-          "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。"
+          "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。"
         ],
         "ok": false
       }

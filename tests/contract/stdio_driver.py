@@ -197,6 +197,13 @@ def canonicalize(value: Any, replacements: Iterable[tuple[str, str]]) -> Any:
         result = value
         for source, replacement in replacements:
             result = result.replace(source, replacement)
+            # 有些响应把同一份结构又以 JSON 文本的形式放在 content[].text 里。
+            # 那份文本里的反斜杠是转义过的，所以原始路径匹配不到 —— 在 Linux/macOS
+            # 上看不出来（路径里本来就没有反斜杠），在 Windows 上会把本机绝对路径
+            # 连同用户名一起留在基线文件里，再随提交进公开仓库。
+            escaped = json.dumps(source)[1:-1]
+            if escaped != source:
+                result = result.replace(escaped, json.dumps(replacement)[1:-1])
         return result
     return value
 

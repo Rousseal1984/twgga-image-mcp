@@ -8,7 +8,7 @@
 - 同步设置 TWGGA_SAVE_DIR_ROOT 沙箱根，避免自定义目录被沙箱拒
 - 自检 server 能不能起来 + 给出脱敏摘要
 - 检测 Claude Code / Codex 进程并提示先关再启
-- 当前仅配置 gpt-image-2 / gpt-image-2-openai；Grok 渠道暂时关闭
+- 当前仅配置 gpt-image-2；Grok 渠道暂时关闭
 
 用法：
     python install.py
@@ -48,7 +48,8 @@ DEFAULT_BASEURL = "https://twgga.work"
 DEFAULT_GROK_MODEL = "grok-imagine-image-lite"
 DEFAULT_GROK_SIZE_MODE = "contain"
 GROK_SIZE_MODES = {"backend", "contain", "cover", "stretch"}
-IMAGE2_MODELS = ("gpt-image-2", "gpt-image-2-openai")
+# 本站只有一条生图线路。留着第二个模型名会让安装器写出一份指向空气的配置。
+IMAGE2_MODELS = ("gpt-image-2",)
 GROK_IMAGE_MODELS = (
     "grok-imagine-image-lite",
     "grok-imagine-image",
@@ -443,8 +444,8 @@ def collect_config(non_interactive: bool, baseurl: str) -> tuple[dict[str, str],
     else:
         print("\n=== 配置TWGGA MCP ===")
         info(f"baseurl: {baseurl}")
-        info("Image2 key 在TWGGA后台获取，必须能看到 gpt-image-2 / gpt-image-2-openai。")
-        info("当前仅支持 gpt-image-2 / gpt-image-2-openai；Grok 生图渠道暂时关闭。")
+        info("Key 在 TWGGA 后台获取，必须能看到 gpt-image-2。")
+        info("当前仅支持 gpt-image-2；Grok 生图渠道暂时关闭。")
         while True:
             api_key = ask("TWGGA Image2 分组 API key (用于 gpt-image-2, sk-...)", secret=True)
             if not api_key:

@@ -34,9 +34,9 @@ Rust：`twgga-image-mcp 0.3.0` + 官方 `rmcp 3.1.4`
 
 | 行为 | 状态 | 说明 |
 |---|---|---|
-| 支持模型 allowlist | Exact | 仅 `gpt-image-2` / `gpt-image-2-openai`，精确字符串，空白包裹也拒绝 |
+| 支持模型 allowlist | Exact | 仅 `gpt-image-2`，精确字符串，空白包裹也拒绝 |
 | Grok 公共错误与 server_info 状态 | Exact | 调用前、文件读取前拒绝；channel disabled/status/compatibility keys 保留 |
-| ≥1600 自动高质量线路 | Exact + live | route note、effective model 相同；5 种真实 2K/4K 尺寸均切到 `gpt-image-2-openai` |
+| ≥1600 的尺寸处理 | Exact + live | route note、effective model 相同；本站单线路不切模型，5 种真实 2K/4K 尺寸均强制 `n=1` 并串行 |
 | 2K/4K generate 强制 n=1 | Exact + live | requested_n 与中文 note 相同；5 个真实请求的 `n=3` 均只生成 1 张 |
 | 1K 标准 generate n>1 | Exact | 最多 5 in-flight，结果按 index 排序；6 请求实测 max active=5 |
 | 高质量 generate 串行 | Exact | concurrency=1 |

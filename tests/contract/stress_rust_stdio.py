@@ -156,7 +156,7 @@ def run(command: list[str], output: Path, processes: int, rounds: int) -> dict[s
             images_per_call=1,
             rounds=max(1, min(rounds, 2)),
             size="2048x2048",
-            model="gpt-image-2-openai",
+            model="gpt-image-2",
         )
 
     assertions = {

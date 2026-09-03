@@ -192,7 +192,7 @@ def test_real_rust_2k_4k_cross_process_pressure_matrix() -> None:
                 checks = {
                     "ok": isinstance(result, dict) and result.get("ok") is True,
                     "auto_routed_quality_model": (
-                        isinstance(result, dict) and result.get("model") == "gpt-image-2-openai"
+                        isinstance(result, dict) and result.get("model") == "gpt-image-2"
                     ),
                     "n_forced_to_one": (
                         isinstance(result, dict) and result.get("requested_n") == 1

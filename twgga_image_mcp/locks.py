@@ -17,7 +17,7 @@ elif _LOCK_BACKEND == "windows":
     import msvcrt  # type: ignore[import-untyped]
 
 
-# ≥2K 在TWGGA origin 走高质量线路串行队列，单张渲染可能持续数十秒。
+# ≥2K 在本站串行排队：单张渲染可能持续数十秒，且会占住一个上游账号。
 # 客户端并发 N 张时第 2 张就要排队等前一张，累积容易撞 CF 120s 硬上限 → 524 雪球。
 #
 # 双层锁：

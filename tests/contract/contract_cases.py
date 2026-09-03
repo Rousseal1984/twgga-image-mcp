@@ -99,7 +99,7 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "retry [scenario:retry_400_too_many]",
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
             "basename": "retry400",
         },
     ),
@@ -109,7 +109,7 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "retry [scenario:retry_408]",
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
             "basename": "retry408",
         },
     ),
@@ -119,7 +119,7 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "retry [scenario:retry_after_seconds]",
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
             "basename": "retry429",
         },
     ),
@@ -129,7 +129,7 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "retry [scenario:retry_after_http_date]",
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
             "basename": "retrydate",
         },
     ),
@@ -139,7 +139,7 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "retry [scenario:retry_500]",
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
             "basename": "retry500",
         },
     ),
@@ -352,7 +352,7 @@ CASES: tuple[CaseSpec, ...] = (
             "prompt": "批量串行 [scenario:b64]",
             "image_paths": ["<INPUT>/batch-0.png", "<INPUT>/batch-1.png"],
             "size": "1024x1024",
-            "model": "gpt-image-2-openai",
+            "model": "gpt-image-2",
         },
         setup="batch",
     ),

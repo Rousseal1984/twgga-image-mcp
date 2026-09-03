@@ -145,7 +145,7 @@ def _infer_size_from_prompt(prompt: str) -> tuple[str, str] | None:
     is_poster = any(k in p for k in poster_kw)
     is_photo32 = any(k in p for k in photo32_kw)
 
-    # 3) K 缩写（这些是 ≥2K 档，会自动切到高质量线路）
+    # 3) K 缩写（这些是 ≥2K 档，会强制 N=1 并串行）
     if re.search(r"\b4k\b|uhd|ultra[\s-]?hd|超高清", p):
         return ("2160x3840", "prompt 含 4K 关键字 + 竖屏") if is_vert else \
                ("3840x2160", "prompt 含 4K 关键字（默认横屏）")

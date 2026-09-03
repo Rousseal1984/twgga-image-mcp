@@ -411,7 +411,7 @@ async def image_generate(
             "notes": notes,
         }
 
-    # 当前实测：高质量线路的常用 1K/2K/4K 尺寸精确输出；标准线路的部分自定义尺寸会被重映射。
+    # 当前实测：任何尺寸都可能被上游重映射；实际像素以 saved.actual_size 为准。原注：被重映射。
     # 当前 GPT Image 2 模型只走 Images API；不再把图像模型错误发送到 chat/completions。
     saved: list[dict] = []
     errors: list[str] = []
@@ -420,7 +420,7 @@ async def image_generate(
     aggressive_retry = is_quality or tier in ("2k", "4k")
     # 并发策略（与 image_batch_edit 对齐）：
     #   - 1K + 标准线路 + n>1 → 5 并发（HTML 网页同款）
-    #   - 1K + 高质量线路 / ≥2K → 串行（高质量线路瞬时限流多；≥2K 已强制 N=1）
+    #   - ≥2K → 串行（大图占住上游账号时间长；≥2K 已强制 N=1）
     can_concurrent = n > 1 and tier in ("small", "1k") and not is_quality
     concurrency = 5 if can_concurrent else 1
     big_size_lock = tier in ("2k", "4k")
@@ -558,8 +558,8 @@ async def image_edit(
         mask_path: 可选 alpha mask PNG 路径，透明区即编辑区。所有尺寸均生效。
         size: 输出 size。W/H 必须是 16 的倍数；总像素和长宽比规则见 server_info。
               "1024x1024" "1280x720" "1024x1536" "1536x1024" "720x1280"  ← 1K 档
-              "2048x2048" "2048x1152" "1152x2048"                        ← 2K 档（自动高质量线路）
-              "3840x2160" / "2160x3840"  ← 4K 档（自动高质量线路）
+              "2048x2048" "2048x1152" "1152x2048"                        ← 2K 档（强制 N=1 并串行）
+              "3840x2160" / "2160x3840"  ← 4K 档（强制 N=1 并串行）
               默认 "1024x1024"。
         model: 仅 "gpt-image-2"（默认）。
         save_dir: 输出目录（必须在安全根目录之下）。默认 ~/Pictures/twgga-out 或 TWGGA_SAVE_DIR。
@@ -581,10 +581,10 @@ async def image_edit(
         # 局部修改（mask 生效）
         image_edit(prompt="change hair color to silver", image_path="/p/x.png", mask_path="/p/x_mask.png")
 
-        # 升细节（2K 自动使用高质量线路）
+        # 升细节（2K 串行）
         image_edit(prompt="enhance to cinematic detail, preserve composition", image_path="/p/draft.png", size="2048x2048")
 
-        # 4K 参考图编辑（自动使用高质量线路）
+        # 4K 参考图编辑（串行）
         image_edit(prompt="preserve composition and refine every detail", image_path="/p/draft.png", size="3840x2160")
 
     Common errors:
@@ -770,13 +770,13 @@ async def image_batch_edit(
       - 任意一张失败不影响其他张；返回 results 里逐张标 ok/error。
 
     [LIMITS]
-      - 与 image_edit 一致支持 1K/2K/4K；2K/4K 自动切高质量线路并逐张串行。
+      - 与 image_edit 一致支持 1K/2K/4K；2K/4K 逐张串行。
       - image_paths 长度建议 2-20 张；高分辨率批次成本与耗时按图片数量线性增加。
 
     Args:
         prompt: 应用到每张图的修改指令。例："add a subtle watermark in bottom-right".
         image_paths: 输入图路径列表（绝对或相对）。
-        size: 输出 size，支持 1K/2K/4K；≥2K 自动使用高质量线路。默认 "1024x1024"。
+        size: 输出 size，支持 1K/2K/4K；≥2K 逐张串行。默认 "1024x1024"。
         model: 仅 "gpt-image-2"。留空即用它。
         save_dir: 输出目录（必须在安全根目录之下）。文件名 batch_<ts>_<idx>.png。
         api_key: 覆盖 TWGGA_API_KEY；base_url 已锁在启动期 env，运行期不接受。
@@ -924,7 +924,7 @@ async def image_multi_reference(
     Args:
         prompt: 综合指令。例："combine the colors from img1 and the composition from img2 into a sunset cityscape".
         image_paths: 2-10 张参考图路径（绝对或相对）。
-        size: 输出 size。支持 1K/2K/4K；≥2K 自动切高质量线路。
+        size: 输出 size。支持 1K/2K/4K；≥2K 串行。
               成功时以 saved.actual_size 和 size_honored 核对真实像素。默认 "1024x1024"。
         model: 仅 "gpt-image-2"（默认）。
         save_dir: 输出目录（必须在安全根目录之下）。
@@ -945,14 +945,14 @@ async def image_multi_reference(
             image_paths=["/p/sketch.png", "/p/character.png", "/p/background.png"],
         )
 
-        # 2K 综合参考（高质量线路）
+        # 2K 综合参考（串行）
         image_multi_reference(
             prompt="merge the architecture style from img1 with the lighting from img2",
             image_paths=["/p/img1.jpg", "/p/img2.jpg"],
             size="2048x2048",
         )
 
-        # 4K 综合参考（自动使用高质量线路）
+        # 4K 综合参考（串行）
         image_multi_reference(
             prompt="combine the product references into one 4K campaign visual",
             image_paths=["/p/front.jpg", "/p/side.jpg"],
@@ -1239,7 +1239,7 @@ def server_info() -> dict[str, Any]:
             "image_batch_edit": {
                 "1k_standard": "5 并发",
                 "1k_quality": "串行 + 1.5s gap",
-                ">=2k": "可用：自动切高质量线路，逐张串行 + 1.5s gap",
+                ">=2k": "可用：逐张串行 + 1.5s gap",
                 "grok": "暂时关闭，待服务器支持后再启用",
             },
             "image_multi_reference": {

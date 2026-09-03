@@ -170,11 +170,11 @@ async def test_entries() -> None:
     else:
         fail(f"save_dir 越界没拒: {r}")
 
-    # 2.6 4K reference 已开放并自动走高质量线路
+    # 2.6 4K reference 已开放，走同一条线路并串行
     img_path = _SANDBOX / "test.png"
     img_path.write_bytes(_minimal_png(1024, 1024))
     eff_model, route_notes = S._resolve_model("gpt-image-2", "3840x2160")
-    if eff_model == "gpt-image-2-openai" and route_notes and not S._bypass_edits(eff_model, "3840x2160"):
+    if route_notes and not S._bypass_edits(eff_model, "3840x2160"):
         ok("image_edit size=4K → 高质量 edits 线路已开放")
     else:
         fail(f"image_edit 4K 路由不正确: model={eff_model}, notes={route_notes}")

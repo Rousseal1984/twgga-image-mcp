@@ -99,15 +99,15 @@
     "result": {
       "content": [
         {
-          "text": "{\n  \"ok\": false,\n  \"error\": \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。\",\n  \"errors\": [\n    \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。\"\n  ]\n}",
+          "text": "{\n  \"ok\": false,\n  \"error\": \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。\",\n  \"errors\": [\n    \"Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。\"\n  ]\n}",
           "type": "text"
         }
       ],
       "isError": false,
       "structuredContent": {
-        "error": "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。",
+        "error": "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。",
         "errors": [
-          "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2 / gpt-image-2-openai。"
+          "Grok 生图渠道暂时关闭，待服务器支持后再启用；当前仅支持 gpt-image-2。"
         ],
         "ok": false
       }
