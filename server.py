@@ -1185,10 +1185,10 @@ def server_info() -> dict[str, Any]:
             "pixel_range": f"总像素必须在 [{MIN_IMAGE_PIXELS:,}, {MAX_IMAGE_PIXELS:,}] 范围内",
             "max_aspect_ratio": f"最长边/最短边 ≤ {MAX_IMAGE_ASPECT_RATIO:g}",
             "quality_values": sorted(VALID_IMAGE_QUALITIES),
-            "auto_quality_route": f"max edge ≥ {HIGH_RES_EDGE} → 自动切 {QUALITY_MODEL}",
+            "size_route": "本站只有一条生图线路，不按尺寸切换模型",
             "live_observation_2026_08_14": (
-                "实测：请求 1024×1024 返回 1122×1402。上游把 size 只当建议，任何尺寸都可能被重映射，"
-                "gpt-image-2 的自定义尺寸可能被后端重映射，调用方应核对 saved.actual_size。"
+                "实测：请求 1024×1024 返回 1122×1402。上游把 size 只当建议，"
+                "任何尺寸都可能被重映射，调用方必须核对 saved.actual_size。"
             ),
         },
         "safety_constraints": {
@@ -1232,13 +1232,13 @@ def server_info() -> dict[str, Any]:
                 "4k": "暂时关闭，待服务器支持后再启用",
             },
             "image_edit": {
-                "1k": "两条当前 Image2 线路均已通过 edits 实测；支持可选 alpha mask",
+                "1k": "已通过 edits 实测；支持可选 alpha mask",
                 "2k_quality": "可用；实际像素以 saved.actual_size 为准",
                 "4k": "可用；实际像素以 saved.actual_size 为准",
             },
             "image_batch_edit": {
                 "1k_standard": "5 并发",
-                "1k_quality": "串行 + 1.5s gap",
+                "1k": "5 并发",
                 ">=2k": "可用：逐张串行 + 1.5s gap",
                 "grok": "暂时关闭，待服务器支持后再启用",
             },
@@ -1254,7 +1254,7 @@ def server_info() -> dict[str, Any]:
             "route_fallback": "当前 GPT Image 2 模型只走 Images API，不 fallback 到 chat/completions",
             "schedule_1k": "上游 5xx → 4s+jitter → 重试 → 8s+jitter → 重试（退避重试最多 2 次，共 ≤3 次尝试）；网络层异常（status=0）另有 1 次免费重试不计入此预算（故最坏 ≤4 次）。注：带 Retry-After 的 408/429/5xx 会按头部值 sleep（上限 120s），此时单次等待可能远大于 4s/8s",
             "schedule_2k_4k": "双层锁内：可恢复 5xx → 60s → 重试 1 次（共 2 次尝试）；CF 524 fail fast 不重试（origin 持续慢，等也无用）。单次 attempt 无字节挂起最长 600s，故 2K/4K 最坏 ≈ 两次 600s attempt + 一次 60s 退避；其间整机所有 ≥2K 请求经跨进程锁串行等待。锁等待 >2s 时 notes 会提示在排队",
-            "trigger": f"model == {QUALITY_MODEL!r} 或 size tier ∈ {{2k, 4k}}",
+            "trigger": "size tier ∈ {2k, 4k}",
             "concurrency_2k_4k": (
                 "双层锁: (1) 进程内 asyncio.Semaphore(1) 同 MCP 进程内并发本地排队; "
                 "(2) 跨进程文件锁 @ ~/.cache/twgga-image/bigsize.lock，POSIX 用 fcntl.flock，"
