@@ -1,0 +1,290 @@
+use std::{collections::BTreeMap, time::Duration};
+
+use secrecy::SecretString;
+use thiserror::Error;
+use url::Url;
+
+use crate::domain::routing::STANDARD_MODEL;
+
+mod env;
+mod paths;
+
+pub use env::{EnvironmentError, EnvironmentSnapshot};
+#[cfg(test)]
+pub(crate) use paths::test_paths;
+pub use paths::{AppPaths, PathError, PathPolicy, PathSource};
+pub(crate) use paths::{create_directory_within, is_windows_unc_root};
+
+pub const ENV_KEYS: &[&str] = &[
+    "HOME",
+    "USER",
+    "USERNAME",
+    "USERPROFILE",
+    "TWGGA_API_KEY",
+    "TWGGA_BASEURL",
+    "TWGGA_MODEL",
+    "TWGGA_SAVE_DIR",
+    "TWGGA_SAVE_DIR_ROOT",
+    "TWGGA_INPUT_ROOT",
+    "TWGGA_USE_SHELL_PROXY",
+    "TWGGA_RESPONSE_FORMAT",
+    "TWGGA_TRUSTED_DOWNLOAD_HOSTS",
+    "TWGGA_ALLOW_FAKE_IP_DOWNLOAD",
+    "TWGGA_GROK_BASEURL",
+    "TWGGA_GROK_API_KEY",
+    "XAI_API_KEY",
+    "GROK_API_KEY",
+    "XAI_MODEL",
+    "GROK_MODEL",
+    "TWGGA_GROK_SIZE_MODE",
+    "TWGGA_CONTRACT_TESTING",
+    "TWGGA_TEST_API_TIMEOUT_MS",
+    "TWGGA_KEYCHAIN_ACCOUNT",
+    "TWGGA_KEYCHAIN_SERVICE",
+];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ResponseFormat {
+    Auto,
+    Url,
+    B64Json,
+}
+
+#[derive(Clone, Debug)]
+pub struct Config {
+    pub base_url: Url,
+    pub api_key: SecretString,
+    pub default_model: String,
+    pub use_shell_proxy: bool,
+    pub response_format: ResponseFormat,
+    pub response_formats_to_try: Vec<&'static str>,
+    pub trusted_download_hosts: Vec<String>,
+    pub allow_fake_ip_download: bool,
+    pub grok_base_url: String,
+    pub grok_api_key: SecretString,
+    pub xai_model: String,
+    pub grok_size_mode: String,
+    pub api_request_timeout: Duration,
+}
+
+#[derive(Debug, Error)]
+pub enum ConfigError {
+    #[error(transparent)]
+    Environment(#[from] EnvironmentError),
+    #[error("TWGGA_BASEURL 无法解析: {value:?} ({detail})")]
+    InvalidBaseUrl { value: String, detail: String },
+    #[error("TWGGA_BASEURL 仅允许 https，或本机 localhost HTTP；收到 {0}")]
+    UnsafeBaseUrl(String),
+}
+
+impl Config {
+    pub fn load() -> Result<Self, ConfigError> {
+        let environment = EnvironmentSnapshot::capture(ENV_KEYS)?;
+        Self::from_env(&environment)
+    }
+
+    pub fn from_env(environment: &EnvironmentSnapshot) -> Result<Self, ConfigError> {
+        Self::from_map(environment.as_map())
+    }
+
+    pub fn from_map(environment: &BTreeMap<String, String>) -> Result<Self, ConfigError> {
+        let base_url_raw = environment
+            .get("TWGGA_BASEURL")
+            .map(String::as_str)
+            .unwrap_or("https://twgga.work");
+        let base_url = Url::parse(base_url_raw).map_err(|error| ConfigError::InvalidBaseUrl {
+            value: base_url_raw.to_owned(),
+            detail: error.to_string(),
+        })?;
+        if !is_safe_base_url(&base_url) {
+            return Err(ConfigError::UnsafeBaseUrl(base_url_raw.to_owned()));
+        }
+
+        let response_format = match environment
+            .get("TWGGA_RESPONSE_FORMAT")
+            .map(|value| value.trim().to_ascii_lowercase())
+            .as_deref()
+        {
+            Some("url") => ResponseFormat::Url,
+            Some("b64_json") => ResponseFormat::B64Json,
+            _ => ResponseFormat::Auto,
+        };
+        let response_formats_to_try = match response_format {
+            ResponseFormat::Auto => vec!["url", "b64_json"],
+            ResponseFormat::Url => vec!["url"],
+            ResponseFormat::B64Json => vec!["b64_json"],
+        };
+        let trusted_raw = environment
+            .get("TWGGA_TRUSTED_DOWNLOAD_HOSTS")
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .unwrap_or("oss.filenest.top");
+        let mut trusted_download_hosts = trusted_raw
+            .split(',')
+            .map(|host| host.trim().trim_end_matches('.').to_ascii_lowercase())
+            .filter(|host| !host.is_empty())
+            .collect::<Vec<_>>();
+        trusted_download_hosts.sort();
+        trusted_download_hosts.dedup();
+
+        let grok_base_url = environment
+            .get("TWGGA_GROK_BASEURL")
+            .cloned()
+            .unwrap_or_else(|| base_url_raw.to_owned());
+        let grok_key = first_non_empty(
+            environment,
+            &["TWGGA_GROK_API_KEY", "XAI_API_KEY", "GROK_API_KEY"],
+        );
+        let xai_model = first_non_empty(environment, &["XAI_MODEL", "GROK_MODEL"])
+            .unwrap_or_else(|| "grok-imagine-image-lite".to_owned());
+        let grok_size_mode = environment
+            .get("TWGGA_GROK_SIZE_MODE")
+            .map(|value| value.trim().to_ascii_lowercase())
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "contain".to_owned());
+        let api_request_timeout = if environment
+            .get("TWGGA_CONTRACT_TESTING")
+            .is_some_and(|value| value.trim() == "1")
+        {
+            environment
+                .get("TWGGA_TEST_API_TIMEOUT_MS")
+                .and_then(|value| value.trim().parse::<u64>().ok())
+                .map(|milliseconds| Duration::from_millis(milliseconds.max(10)))
+                .unwrap_or(Duration::from_secs(600))
+        } else {
+            Duration::from_secs(600)
+        };
+
+        Ok(Self {
+            base_url,
+            api_key: environment
+                .get("TWGGA_API_KEY")
+                .cloned()
+                .unwrap_or_default()
+                .into(),
+            default_model: environment
+                .get("TWGGA_MODEL")
+                .cloned()
+                .unwrap_or_else(|| STANDARD_MODEL.to_owned()),
+            use_shell_proxy: env_truthy(environment.get("TWGGA_USE_SHELL_PROXY"), false),
+            response_format,
+            response_formats_to_try,
+            trusted_download_hosts,
+            allow_fake_ip_download: env_truthy(
+                environment.get("TWGGA_ALLOW_FAKE_IP_DOWNLOAD"),
+                true,
+            ),
+            grok_base_url,
+            grok_api_key: grok_key.unwrap_or_default().into(),
+            xai_model,
+            grok_size_mode,
+            api_request_timeout,
+        })
+    }
+}
+
+pub fn is_safe_base_url(url: &Url) -> bool {
+    if !url.username().is_empty() || url.password().is_some() || url.host_str().is_none() {
+        return false;
+    }
+    if url.scheme() == "https" {
+        return true;
+    }
+    if url.scheme() != "http" {
+        return false;
+    }
+    let host = url
+        .host_str()
+        .unwrap_or_default()
+        .trim_end_matches('.')
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .to_ascii_lowercase();
+    host == "localhost" || host == "127.0.0.1" || host == "::1" || host.ends_with(".localhost")
+}
+
+pub fn default_model() -> &'static str {
+    STANDARD_MODEL
+}
+
+fn first_non_empty(environment: &BTreeMap<String, String>, names: &[&str]) -> Option<String> {
+    names.iter().find_map(|name| {
+        environment
+            .get(*name)
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+    })
+}
+
+fn env_truthy(value: Option<&String>, default: bool) -> bool {
+    value.map_or(default, |raw| {
+        matches!(
+            raw.trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "yes"
+        )
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeMap;
+
+    use secrecy::ExposeSecret;
+
+    use super::*;
+
+    fn base_env() -> BTreeMap<String, String> {
+        BTreeMap::from([
+            ("HOME".into(), "/tmp/twgga-home".into()),
+            ("TWGGA_API_KEY".into(), "sk-super-secret".into()),
+            ("TWGGA_SAVE_DIR_ROOT".into(), "/tmp/twgga-root".into()),
+            ("TWGGA_SAVE_DIR".into(), "/tmp/twgga-root/out".into()),
+        ])
+    }
+
+    #[test]
+    fn config_freezes_current_environment_and_redacts_secrets() {
+        let config = Config::from_map(&base_env()).unwrap_or_else(|error| panic!("{error}"));
+        assert_eq!(config.base_url.as_str(), "https://twgga.work/");
+        assert_eq!(config.default_model, "gpt-image-2");
+        assert_eq!(config.api_key.expose_secret(), "sk-super-secret");
+        assert!(!format!("{config:?}").contains("sk-super-secret"));
+        assert_eq!(config.response_formats_to_try, ["url", "b64_json"]);
+    }
+
+    #[test]
+    fn only_https_or_loopback_http_base_urls_are_accepted() {
+        for accepted in [
+            "https://api.example.test",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+            "http://[::1]:8080",
+            "http://mock.localhost:8080",
+        ] {
+            let url = Url::parse(accepted).unwrap_or_else(|error| panic!("{error}"));
+            assert!(is_safe_base_url(&url), "{accepted}");
+        }
+        for rejected in [
+            "http://api.example.test",
+            "ftp://example.test",
+            "https://user:pass@example.test",
+        ] {
+            let url = Url::parse(rejected).unwrap_or_else(|error| panic!("{error}"));
+            assert!(!is_safe_base_url(&url), "{rejected}");
+        }
+    }
+
+    #[test]
+    fn response_format_and_proxy_are_explicit_opt_ins() {
+        let mut environment = base_env();
+        environment.insert("TWGGA_RESPONSE_FORMAT".into(), "b64_json".into());
+        environment.insert("TWGGA_USE_SHELL_PROXY".into(), "yes".into());
+        environment.insert("TWGGA_ALLOW_FAKE_IP_DOWNLOAD".into(), "0".into());
+        let config = Config::from_map(&environment).unwrap_or_else(|error| panic!("{error}"));
+        assert_eq!(config.response_format, ResponseFormat::B64Json);
+        assert_eq!(config.response_formats_to_try, ["b64_json"]);
+        assert!(config.use_shell_proxy);
+        assert!(!config.allow_fake_ip_download);
+    }
+}

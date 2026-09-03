@@ -1,0 +1,145 @@
+{
+  "id": 3,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"version\": \"0.3.0\", \"base_url\": \"https://twgga.work\", \"grok_base_url\": \"https://twgga.work\", \"default_model\": \"gpt-image-2\", \"grok_default_model\": \"grok-imagine-image-lite\", \"grok_size_mode\": \"contain\", \"available_models\": [\"gpt-image-2\"], \"grok_available_models\": [], \"grok_channel_enabled\": false, \"grok_channel_status\": \"暂时关闭，待服务器支持后再启用\", \"default_save_dir\": \"<SAVE_ROOT>\", \"api_key_configured\": false, \"grok_api_key_configured\": false, \"response_format\": \"auto\", \"response_formats_to_try\": [\"url\", \"b64_json\"], \"trusted_download_hosts\": [\"oss.filenest.top\"], \"allow_fake_ip_download\": true, \"size_rules\": {\"format\": \"WxH 字符串（如 '1024x1024'）\", \"alignment\": \"W 与 H 都必须是 16 的整数倍\", \"edge_range\": \"W/H 必须在 [256, 3840] 范围内\", \"pixel_range\": \"总像素必须在 [655,360, 8,294,400] 范围内\", \"max_aspect_ratio\": \"最长边/最短边 ≤ 3\", \"quality_values\": [\"auto\", \"high\", \"low\", \"medium\"], \"auto_quality_route\": \"不适用：本站只有一条线路，不按尺寸切换模型\", \"live_observation_2026_08_14\": \"实测：请求 1024×1024 返回 1122×1402。上游把 size 只当建议，任何尺寸都可能被重映射，调用方必须核对 saved.actual_size。\"}, \"safety_constraints\": {\"n_range\": \"image_generate 的 n ∈ [1, 10]，超出立即拒（防 burn quota）\", \"save_dir_root\": \"所有输出强制落在 TWGGA_SAVE_DIR_ROOT=<SAVE_ROOT> 之下；传 root 之外路径会被拒\", \"basename_charset\": \"basename 仅允许 [A-Za-z0-9_-.]，禁含 / .. 和路径分量\", \"input_size_limits\": \"单输入图 ≤4MB；image_multi_reference 总和 ≤8MB\", \"input_image_validation\": \"所有输入图先检查文件大小与 magic，再以 allocation/像素/边长硬上限执行完整解码；仅允许 PNG/JPEG/WebP，截断、损坏、伪装格式和解压炸弹会在请求前拒绝\", \"response_size_limit\": \"远端响应 ≤25MB；超过中断不落盘\", \"base_url_locked\": \"base_url 锁在启动期 TWGGA_BASEURL env，运行期 tool 不接受参数（防 key 外泄到攻击者 host）\"}, \"recommended_sizes\": {\"1k_standard\": [\"1024x1024\", \"1024x1536\", \"1280x720\", \"1536x1024\", \"720x1280\"], \"2k_quality\": [\"1152x2048\", \"2048x1152\", \"2048x2048\"], \"4k_quality\": [\"2160x3840\", \"3840x2160\"], \"tip\": \"本站只有一条生图线路（gpt-image-2）。上游把 size 当作建议而非要求，任何尺寸都可能被重映射，始终核对 saved.actual_size；需要精确构图时把画幅要求写进 prompt。\", \"two_step_tip\": \"当前线路已支持参考图 4K，无需两步绕行；image_edit/image_multi_reference 可直接请求 3840x2160。\", \"grok_tip\": \"Grok 生图渠道暂时关闭，待服务器支持后再启用。\", \"grok_actual_size_tip\": \"Grok 生图渠道暂时关闭，当前不会生成 Grok 输出。\"}, \"capability_matrix\": {\"image_generate\": {\"1k\": \"gpt-image-2；N>1 最多 5 并发\", \"2k_quality\": \"可用；N 强制为 1；实际像素以 saved.actual_size 为准\", \"4k_quality\": \"可用；N 强制为 1；实际像素以 saved.actual_size 为准\"}, \"grok_image_generate\": {\"1k\": \"暂时关闭，待服务器支持后再启用\", \"2k\": \"暂时关闭，待服务器支持后再启用\", \"4k\": \"暂时关闭，待服务器支持后再启用\"}, \"image_edit\": {\"1k\": \"两条当前 Image2 线路均已通过 edits 实测；支持可选 alpha mask\", \"2k_quality\": \"可用；实际像素以 saved.actual_size 为准\", \"4k\": \"可用；实际像素以 saved.actual_size 为准\"}, \"image_batch_edit\": {\"1k_standard\": \"5 并发\", \"1k_quality\": \"串行 + 1.5s gap\", \">=2k\": \"可用：逐张串行 + 1.5s gap\", \"grok\": \"暂时关闭，待服务器支持后再启用\"}, \"image_multi_reference\": {\"1k\": \"2-10 张参考图融合输出 1 张，走 edits + image[]\", \"2k_quality\": \"可用；失败时直接返回 Images API 错误\", \"4k\": \"可用：走 edits + image[]；核对 saved.actual_size\"}}, \"retry_policy\": {\"retryable_status\": [0, 408, 409, 425, 429, 500, 502, 503, 504, 520, 521, 522, 523, 524, 525, 527], \"fallback_status\": [], \"route_fallback\": \"当前 GPT Image 2 模型只走 Images API，不 fallback 到 chat/completions\", \"schedule_1k\": \"上游 5xx → 4s+jitter → 重试 → 8s+jitter → 重试（退避重试最多 2 次，共 ≤3 次尝试）；网络层异常（status=0）另有 1 次免费重试不计入此预算（故最坏 ≤4 次）。注：带 Retry-After 的 408/429/5xx 会按头部值 sleep（上限 120s），此时单次等待可能远大于 4s/8s\", \"schedule_2k_4k\": \"双层锁内：可恢复 5xx → 60s → 重试 1 次（共 2 次尝试）；CF 524 fail fast 不重试（origin 持续慢，等也无用）。单次 attempt 无字节挂起最长 600s，故 2K/4K 最坏 ≈ 两次 600s attempt + 一次 60s 退避；其间整机所有 ≥2K 请求经跨进程锁串行等待。锁等待 >2s 时 notes 会提示在排队\", \"trigger\": \"size tier ∈ {2k, 4k}\", \"concurrency_2k_4k\": \"双层锁: (1) 进程内 asyncio.Semaphore(1) 同 MCP 进程内并发本地排队; (2) 跨进程文件锁 @ ~/.cache/twgga-image/bigsize.lock，POSIX 用 fcntl.flock，Windows 用 msvcrt.locking —— 多 Claude Code/Codex 窗口各自独立 MCP 子进程时跨进程串行打 origin，整机任意时刻只有一张 ≥2K 在 origin 排队。\"}, \"response_handling\": {\"saved_to_disk\": \"所有生成的图片落盘到 save_dir（默认 cwd/out 或 TWGGA_SAVE_DIR）\", \"actual_size_field\": \"返回的 saved[].actual_size 是从 PNG/JPEG header 读出的真实像素，可与请求 size 对比验证\", \"extract_paths\": \"支持 data[].b64_json / data[].url / chat content markdown 三种响应格式\", \"grok_extract_paths\": \"Grok 生图渠道暂时关闭，当前不会执行 Grok 响应提取。\"}}",
+        "type": "text"
+      }
+    ],
+    "isError": false,
+    "structuredContent": {
+      "allow_fake_ip_download": true,
+      "api_key_configured": false,
+      "available_models": [
+        "gpt-image-2"
+      ],
+      "base_url": "https://twgga.work",
+      "capability_matrix": {
+        "grok_image_generate": {
+          "1k": "暂时关闭，待服务器支持后再启用",
+          "2k": "暂时关闭，待服务器支持后再启用",
+          "4k": "暂时关闭，待服务器支持后再启用"
+        },
+        "image_batch_edit": {
+          "1k_quality": "串行 + 1.5s gap",
+          "1k_standard": "5 并发",
+          ">=2k": "可用：逐张串行 + 1.5s gap",
+          "grok": "暂时关闭，待服务器支持后再启用"
+        },
+        "image_edit": {
+          "1k": "两条当前 Image2 线路均已通过 edits 实测；支持可选 alpha mask",
+          "2k_quality": "可用；实际像素以 saved.actual_size 为准",
+          "4k": "可用；实际像素以 saved.actual_size 为准"
+        },
+        "image_generate": {
+          "1k": "gpt-image-2；N>1 最多 5 并发",
+          "2k_quality": "可用；N 强制为 1；实际像素以 saved.actual_size 为准",
+          "4k_quality": "可用；N 强制为 1；实际像素以 saved.actual_size 为准"
+        },
+        "image_multi_reference": {
+          "1k": "2-10 张参考图融合输出 1 张，走 edits + image[]",
+          "2k_quality": "可用；失败时直接返回 Images API 错误",
+          "4k": "可用：走 edits + image[]；核对 saved.actual_size"
+        }
+      },
+      "default_model": "gpt-image-2",
+      "default_save_dir": "<SAVE_ROOT>",
+      "grok_api_key_configured": false,
+      "grok_available_models": [],
+      "grok_base_url": "https://twgga.work",
+      "grok_channel_enabled": false,
+      "grok_channel_status": "暂时关闭，待服务器支持后再启用",
+      "grok_default_model": "grok-imagine-image-lite",
+      "grok_size_mode": "contain",
+      "recommended_sizes": {
+        "1k_standard": [
+          "1024x1024",
+          "1024x1536",
+          "1280x720",
+          "1536x1024",
+          "720x1280"
+        ],
+        "2k_quality": [
+          "1152x2048",
+          "2048x1152",
+          "2048x2048"
+        ],
+        "4k_quality": [
+          "2160x3840",
+          "3840x2160"
+        ],
+        "grok_actual_size_tip": "Grok 生图渠道暂时关闭，当前不会生成 Grok 输出。",
+        "grok_tip": "Grok 生图渠道暂时关闭，待服务器支持后再启用。",
+        "tip": "本站只有一条生图线路（gpt-image-2）。上游把 size 当作建议而非要求，任何尺寸都可能被重映射，始终核对 saved.actual_size；需要精确构图时把画幅要求写进 prompt。",
+        "two_step_tip": "当前线路已支持参考图 4K，无需两步绕行；image_edit/image_multi_reference 可直接请求 3840x2160。"
+      },
+      "response_format": "auto",
+      "response_formats_to_try": [
+        "url",
+        "b64_json"
+      ],
+      "response_handling": {
+        "actual_size_field": "返回的 saved[].actual_size 是从 PNG/JPEG header 读出的真实像素，可与请求 size 对比验证",
+        "extract_paths": "支持 data[].b64_json / data[].url / chat content markdown 三种响应格式",
+        "grok_extract_paths": "Grok 生图渠道暂时关闭，当前不会执行 Grok 响应提取。",
+        "saved_to_disk": "所有生成的图片落盘到 save_dir（默认 cwd/out 或 TWGGA_SAVE_DIR）"
+      },
+      "retry_policy": {
+        "concurrency_2k_4k": "双层锁: (1) 进程内 asyncio.Semaphore(1) 同 MCP 进程内并发本地排队; (2) 跨进程文件锁 @ ~/.cache/twgga-image/bigsize.lock，POSIX 用 fcntl.flock，Windows 用 msvcrt.locking —— 多 Claude Code/Codex 窗口各自独立 MCP 子进程时跨进程串行打 origin，整机任意时刻只有一张 ≥2K 在 origin 排队。",
+        "fallback_status": [],
+        "retryable_status": [
+          0,
+          408,
+          409,
+          425,
+          429,
+          500,
+          502,
+          503,
+          504,
+          520,
+          521,
+          522,
+          523,
+          524,
+          525,
+          527
+        ],
+        "route_fallback": "当前 GPT Image 2 模型只走 Images API，不 fallback 到 chat/completions",
+        "schedule_1k": "上游 5xx → 4s+jitter → 重试 → 8s+jitter → 重试（退避重试最多 2 次，共 ≤3 次尝试）；网络层异常（status=0）另有 1 次免费重试不计入此预算（故最坏 ≤4 次）。注：带 Retry-After 的 408/429/5xx 会按头部值 sleep（上限 120s），此时单次等待可能远大于 4s/8s",
+        "schedule_2k_4k": "双层锁内：可恢复 5xx → 60s → 重试 1 次（共 2 次尝试）；CF 524 fail fast 不重试（origin 持续慢，等也无用）。单次 attempt 无字节挂起最长 600s，故 2K/4K 最坏 ≈ 两次 600s attempt + 一次 60s 退避；其间整机所有 ≥2K 请求经跨进程锁串行等待。锁等待 >2s 时 notes 会提示在排队",
+        "trigger": "size tier ∈ {2k, 4k}"
+      },
+      "safety_constraints": {
+        "base_url_locked": "base_url 锁在启动期 TWGGA_BASEURL env，运行期 tool 不接受参数（防 key 外泄到攻击者 host）",
+        "basename_charset": "basename 仅允许 [A-Za-z0-9_-.]，禁含 / .. 和路径分量",
+        "input_image_validation": "所有输入图先检查文件大小与 magic，再以 allocation/像素/边长硬上限执行完整解码；仅允许 PNG/JPEG/WebP，截断、损坏、伪装格式和解压炸弹会在请求前拒绝",
+        "input_size_limits": "单输入图 ≤4MB；image_multi_reference 总和 ≤8MB",
+        "n_range": "image_generate 的 n ∈ [1, 10]，超出立即拒（防 burn quota）",
+        "response_size_limit": "远端响应 ≤25MB；超过中断不落盘",
+        "save_dir_root": "所有输出强制落在 TWGGA_SAVE_DIR_ROOT=<SAVE_ROOT> 之下；传 root 之外路径会被拒"
+      },
+      "size_rules": {
+        "alignment": "W 与 H 都必须是 16 的整数倍",
+        "auto_quality_route": "不适用：本站只有一条线路，不按尺寸切换模型",
+        "edge_range": "W/H 必须在 [256, 3840] 范围内",
+        "format": "WxH 字符串（如 '1024x1024'）",
+        "live_observation_2026_08_14": "实测：请求 1024×1024 返回 1122×1402。上游把 size 只当建议，任何尺寸都可能被重映射，调用方必须核对 saved.actual_size。",
+        "max_aspect_ratio": "最长边/最短边 ≤ 3",
+        "pixel_range": "总像素必须在 [655,360, 8,294,400] 范围内",
+        "quality_values": [
+          "auto",
+          "high",
+          "low",
+          "medium"
+        ]
+      },
+      "trusted_download_hosts": [
+        "oss.filenest.top"
+      ],
+      "version": "0.3.0"
+    }
+  }
+}

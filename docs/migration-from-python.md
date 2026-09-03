@@ -1,0 +1,219 @@
+# 从 Python reference 迁移到 Rust binary
+
+当前状态：v0.3.0 的 `main` 与推荐安装入口为 Rust native；Python v0.2.0 保留在
+`python-reference` 分支，并继续用于协议差分和紧急回滚。
+
+## 选择合适的路径
+
+- 新安装或升级：使用 release Rust binary 的 `install`。
+- 需要回滚：切到 `python-reference`，或恢复 installer 创建的配置备份。
+- 最终用户不需要 Rust toolchain：从 release artifact 下载对应单文件 binary。
+
+release workflow 产出：
+
+- `twgga-image-mcp-linux-x86_64`
+- `twgga-image-mcp-macos-x86_64`
+- `twgga-image-mcp-macos-arm64`
+- `twgga-image-mcp-windows-x86_64.exe`
+- `SHA256SUMS`
+
+发布页中的 binary 来自对应平台原生 runner；本地 `target/release` 只用于开发验证。
+
+## Python compatibility installer
+
+`install.py` 保持 Python reference 默认，仅用于兼容和回滚：
+
+```bash
+python install.py --runtime python
+```
+
+试用已有 Rust binary：
+
+```bash
+TWGGA_API_KEY=sk-... \
+TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
+python install.py --yes \
+  --runtime rust \
+  --rust-binary /absolute/path/to/twgga-image-mcp
+```
+
+Rust 模式跳过 pip/server dependency 安装，写入的 MCP command 直接指向 binary，args 为空。脚本
+仍会备份并只合并 `twgga-image`，不会删除其他 MCP server。
+
+## 阶段 B：直接使用 Rust CLI
+
+binary 无参数等于 `serve`：
+
+```bash
+/absolute/path/twgga-image-mcp
+/absolute/path/twgga-image-mcp serve
+```
+
+安装：
+
+```bash
+TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
+/absolute/path/twgga-image-mcp install --yes
+```
+
+默认会把 source binary 复制到稳定的 per-user data-local 路径，再写客户端配置：macOS 位于
+`~/Library/Application Support/twgga-image-mcp/bin/`，Linux 位于
+`~/.local/share/twgga-image-mcp/bin/`，Windows 位于
+`%LOCALAPPDATA%\twgga-image-mcp\bin\`。仓库移动或 `cargo clean` 不会删除该副本。
+
+常用 flags：
+
+```bash
+twgga-image-mcp install --no-codex
+twgga-image-mcp install --no-claude
+twgga-image-mcp install --baseurl https://twgga.work
+twgga-image-mcp install --save-dir /absolute/output/path
+twgga-image-mcp install --binary-path /path/to/downloaded/twgga-image-mcp
+twgga-image-mcp install --dev --binary-path ./target/release/twgga-image-mcp
+twgga-image-mcp reset --yes
+twgga-image-mcp reset --yes --no-claude
+twgga-image-mcp doctor
+twgga-image-mcp version
+```
+
+installer 不把 API key 写入 Claude JSON/Codex TOML。macOS 可使用下文 Keychain；其他平台让
+客户端进程继承 `TWGGA_API_KEY`，或使用 tool 已有的 `api_key` 参数。base URL 仅允许 HTTPS，
+或 localhost/127.0.0.1/`::1` HTTP。
+
+## 手动配置
+
+Claude JSON：
+
+```json
+{
+  "mcpServers": {
+    "twgga-image": {
+      "command": "/absolute/path/twgga-image-mcp",
+      "args": [],
+      "env": {
+        "TWGGA_SAVE_DIR": "/absolute/output/path",
+        "TWGGA_SAVE_DIR_ROOT": "/absolute/output/path"
+      }
+    }
+  }
+}
+```
+
+Codex TOML：
+
+```toml
+[mcp_servers.twgga-image]
+command = "/absolute/path/twgga-image-mcp"
+args = []
+
+[mcp_servers.twgga-image.env]
+TWGGA_SAVE_DIR = "/absolute/output/path"
+TWGGA_SAVE_DIR_ROOT = "/absolute/output/path"
+```
+
+客户端保存配置后需要重启，让它重新 spawn STDIO server。Windows 用户不应手工拼接上述 TOML；
+installer 使用 `toml_edit` AST 序列化，并对临时文件执行 parser round-trip 后才原子替换配置。
+单/双引号都不是契约，解析后的 PathBuf 与原值完全一致才是契约。
+
+## macOS Keychain
+
+原 launcher 保留用于 Python 回滚。Rust binary 可直接读取 Keychain，因此推荐配置稳定 binary：
+
+```toml
+[mcp_servers.twgga-image]
+command = "/Users/you/Library/Application Support/twgga-image-mcp/bin/twgga-image-mcp"
+args = []
+
+[mcp_servers.twgga-image.env]
+TWGGA_KEYCHAIN_SERVICE = "ai.twggaapi.mcp"
+TWGGA_KEYCHAIN_ACCOUNT = "your-macos-account"
+TWGGA_SAVE_DIR = "/Users/you/Pictures/twgga-out"
+TWGGA_SAVE_DIR_ROOT = "/Users/you/Pictures/twgga-out"
+```
+
+Rust 只在 `TWGGA_API_KEY` 为空且配置了 service/account 时读取 Keychain；secret 进入
+`SecretString`，不会写日志或客户端配置。旧 launcher 未删除，不设置 `TWGGA_MCP_BINARY` 时仍可
+显式回滚到 Python reference。
+
+## 相对路径与锁
+
+- `TWGGA_SAVE_DIR_ROOT` 在启动时转为绝对、创建并 canonicalize；相对值以 home 为基准。
+- `TWGGA_SAVE_DIR` 和 tool `save_dir` 的相对值以 save root 为基准。
+- 设置 `TWGGA_INPUT_ROOT` 后，相对输入以 input root 为基准；未设置时以 server 启动时捕获的 cwd
+  为兼容基准。`server_info.safety_constraints.input_image_validation` 会显示实际规则。
+- 只支持 `~`、`~/...` 与 Windows `~\...`，不支持 `~someone`。
+- Python/Rust 兼容期都使用 `~/.cache/twgga-image/bigsize.lock`。
+
+## 验证
+
+先做 CLI/协议验证：
+
+```bash
+twgga-image-mcp doctor
+python tests/smoke_local.py --proto \
+  --server-command '/absolute/path/twgga-image-mcp'
+```
+
+然后在 Claude/Codex 中调用 `server_info`，确认：
+
+- `available_models` 只有两个 Image2 model；
+- `api_key_configured` 为 true；
+- base URL 与 save root 正确；
+- retry lock 描述包含 tokio Semaphore 与 fs4。
+
+开发/发布验证：
+
+```bash
+.venv/bin/python -m pytest -q
+cargo fmt --check
+cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets --all-features
+cargo build
+TWGGA_RUN_CONTRACT_TESTS=1 TWGGA_RUN_LIVE_TESTS=0 \
+  .venv/bin/python -m pytest -q \
+  tests/contract/test_python_rust_differential.py \
+  tests/contract/test_latest_protocol.py
+cargo audit
+```
+
+这些 contract tests 只运行本地 mock API，不消耗图片额度。
+
+## 明确回滚
+
+### 回到 Python reference（推荐回滚命令）
+
+```bash
+TWGGA_API_KEY=sk-... \
+TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
+python install.py --yes --runtime python
+```
+
+该命令会再次备份当前配置，然后只把 `twgga-image` command 改回当前 Python + `server.py`；其他
+MCP server 不动。
+
+### 完全移除 twgga-image 节
+
+```bash
+/absolute/path/twgga-image-mcp reset --yes
+# 或 Python reference installer：
+python install.py --reset
+```
+
+### 恢复某个完整备份
+
+安装/reset 会在原文件旁创建 `.bak.<timestamp>`。确认目标时间戳后：
+
+```bash
+cp "$HOME/.claude.json.bak.<timestamp>" "$HOME/.claude.json"
+cp "$HOME/.codex/config.toml.bak.<timestamp>" "$HOME/.codex/config.toml"
+chmod 600 "$HOME/.claude.json" "$HOME/.codex/config.toml"
+```
+
+Windows 用 PowerShell `Copy-Item` 恢复对应 backup。恢复后重启客户端。
+
+## 数据与兼容状态
+
+Python 实现、Python tests 和 `install.py` 都没有删除。Rust 输出文件与 Python 使用同一 size、
+basename、collision 和 root 规则；迁移不移动已有图片。详见
+[`rust-compatibility-matrix.md`](rust-compatibility-matrix.md) 和
+[`rust-security-review.md`](rust-security-review.md)。

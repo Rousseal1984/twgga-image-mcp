@@ -1,0 +1,182 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python-compat:
+    name: Python ${{ matrix.python-version }} reference
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install -e '.[test]'
+      - env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+          TWGGA_RUN_CONTRACT_TESTS: "0"
+        run: python -m pytest -q
+
+  msrv:
+    name: Rust 1.88 MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.88.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --locked --all-targets --all-features
+
+  quality:
+    name: Contracts, lint, tests, audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Python reference and tests
+        run: python -m pip install -e '.[test]'
+
+      - name: Python reference tests
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+        run: python -m pytest -q
+
+      - name: Frozen 42-case parameter matrix before/after
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+        run: python -m tests.contract.compare_parameter_matrix --output /tmp/parameter-matrix.json
+
+      - name: Python smoke and offline dry-run
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+        run: |
+          python tests/smoke_local.py
+          python tests/perf_bench.py --dry-run --out-dir /tmp/twgga-dry-run
+
+      - name: Rust formatting
+        run: cargo fmt --check
+
+      - name: Rust lint
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --locked --all-targets --all-features
+
+      - name: Build Rust debug server for black-box contracts
+        run: cargo build --locked
+
+      - name: Python and Rust STDIO smoke
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+        run: python tests/smoke_local.py --proto --server-command './target/debug/twgga-image-mcp'
+
+      - name: Full Python/Rust differential contract
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+          TWGGA_RUN_CONTRACT_TESTS: "1"
+        run: >-
+          python -m pytest -q
+          tests/contract/test_python_rust_differential.py
+          tests/contract/test_latest_protocol.py
+          tests/contract/test_rust_installer_cli.py
+
+      - name: Rust STDIO multiprocess stress
+        env:
+          TWGGA_RUN_LIVE_TESTS: "0"
+        run: >-
+          python -m tests.contract.stress_rust_stdio
+          --rust-command ./target/debug/twgga-image-mcp
+          --processes 4
+          --rounds 1
+          --output /tmp/twgga-rust-stress.json
+
+      - name: Production source has no panic shortcuts
+        run: >-
+          cargo clippy --locked --lib --bins --all-features --
+          -D warnings
+          -D clippy::unwrap_used
+          -D clippy::expect_used
+          -D clippy::panic
+
+      - name: No committed generated output or likely real API key
+        shell: bash
+        run: |
+          if git ls-files | rg '(^|/)(out|output)/|\.(png|jpe?g|webp|gif)$' | rg -v '^docs/'; then
+            echo 'generated image/output is tracked' >&2
+            exit 1
+          fi
+          if rg -n 'sk-[A-Za-z0-9]{20,}' --glob '!Cargo.lock' --glob '!.env.example'; then
+            echo 'possible API key is committed' >&2
+            exit 1
+          fi
+
+      - name: Cargo audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  native-release-build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux x86_64
+            os: ubuntu-latest
+            artifact: twgga-image-mcp-linux-x86_64
+            binary: target/release/twgga-image-mcp
+          - name: macOS x86_64
+            os: macos-15-intel
+            artifact: twgga-image-mcp-macos-x86_64
+            binary: target/release/twgga-image-mcp
+          - name: macOS arm64
+            os: macos-15
+            artifact: twgga-image-mcp-macos-arm64
+            binary: target/release/twgga-image-mcp
+          - name: Windows x86_64
+            os: windows-latest
+            artifact: twgga-image-mcp-windows-x86_64
+            binary: target/release/twgga-image-mcp.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install Python reference for cross-runtime lock contract
+        run: python -m pip install -e .
+      - name: Test all Rust targets
+        run: cargo test --locked --all-targets --all-features
+      - name: Windows issue #4 native path regressions
+        if: runner.os == 'Windows'
+        run: |
+          cargo test --locked --test config_roundtrip codex_config_windows_backslash_regression_issue_4
+          cargo test --locked --test path_matrix windows_root_checks_are_component_aware_and_case_insensitive
+          cargo test --locked --test sandbox_paths windows_junction_and_unc_escape_are_rejected
+          cargo test --locked --test sandbox_paths windows_unc_share_can_be_the_actual_output_capability_root
+      - name: Build release binary
+        run: cargo build --locked --release --all-features
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
+          if-no-files-found: error
