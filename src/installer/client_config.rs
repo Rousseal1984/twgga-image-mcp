@@ -63,6 +63,12 @@ impl ClientLaunchSpec {
         &self.env
     }
 
+    /// 写进客户端配置的可执行文件路径。
+    ///
+    /// **刻意不做显示归一化。** Windows 的 `\\?\` 扩展前缀不是噪声，它是超过
+    /// MAX_PATH（260 字符）的路径唯一能被打开的形式；客户端要拿这个值真的去执行
+    /// 二进制，剥掉前缀会让装在长路径下的安装当场失效。展示用的归一化只适用于
+    /// 给人看的字段，不适用于这里。
     pub(crate) fn command_text(&self) -> Result<&str, InstallError> {
         unicode(self.command.as_os_str(), "Rust binary path")
     }

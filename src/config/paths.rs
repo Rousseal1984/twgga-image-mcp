@@ -31,8 +31,27 @@ impl PathSource {
         }
     }
 
+    /// 解析家目录，优先看环境变量，与 Python 侧保持一致。
+    ///
+    /// `dirs::home_dir()` 在 Windows 上走的是 Win32 的 SHGetKnownFolderPath，
+    /// 完全不看环境变量；而 Python 的 `expanduser("~")` 在 Windows 上读
+    /// `USERPROFILE`。两者因此会解析到不同的目录 —— Python 与 Rust 本该共用
+    /// 同一把跨进程锁、写同一份客户端配置，在 Windows 上却各写各的。
+    /// 这里先读环境变量再回落到 dirs，把两边拉回一致，也让把配置挪到别处成为可能。
+    fn resolve_home() -> Option<PathBuf> {
+        for key in ["TWGGA_HOME", "USERPROFILE", "HOME"] {
+            if let Some(value) = std::env::var_os(key) {
+                let path = PathBuf::from(value);
+                if !path.as_os_str().is_empty() {
+                    return Some(path);
+                }
+            }
+        }
+        dirs::home_dir()
+    }
+
     pub fn capture() -> Result<Self, PathError> {
-        let home = dirs::home_dir().ok_or(PathError::HomeUnavailable)?;
+        let home = Self::resolve_home().ok_or(PathError::HomeUnavailable)?;
         let startup_cwd = std::env::current_dir()
             .map_err(|error| PathError::CurrentDirectory(error.to_string()))?;
         let executable = std::env::current_exe()

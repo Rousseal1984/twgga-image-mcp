@@ -53,7 +53,7 @@ def test_rust_installer_and_reset_preserve_unrelated_configuration(tmp_path: Pat
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert installed.returncode == 0, installed.stderr
     assert secret not in installed.stdout + installed.stderr
@@ -87,7 +87,7 @@ def test_rust_installer_and_reset_preserve_unrelated_configuration(tmp_path: Pat
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert doctor.returncode == 0, doctor.stderr
     assert "doctor: OK" in doctor.stderr
@@ -98,7 +98,7 @@ def test_rust_installer_and_reset_preserve_unrelated_configuration(tmp_path: Pat
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert reset.returncode == 0, reset.stderr
     claude = json.loads(claude_path.read_text(encoding="utf-8"))
@@ -136,10 +136,14 @@ def test_rust_installer_dev_mode_is_the_only_target_path_opt_out(tmp_path: Path)
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert installed.returncode == 0, installed.stderr
     codex = tomllib.loads((home / ".codex" / "config.toml").read_text(encoding="utf-8"))
     server = codex["mcp_servers"]["twgga-image"]
-    assert Path(server["command"]) == RUST_BINARY.resolve()
+    # Windows 上 canonicalize 给的是扩展形式 \\?\C:\...，安装器刻意原样写进配置：
+    # 那是超过 MAX_PATH 的路径唯一能被打开的形式，剥掉会让长路径下的安装失效。
+    # 而 Path.resolve() 并不会把它折回普通形式，所以按字符串比会假阴性。
+    # 这里断言的是真正要紧的那件事——配置里那个路径指向的就是我们刚装的二进制。
+    assert os.path.samefile(server["command"], RUST_BINARY)
     assert server["args"] == []

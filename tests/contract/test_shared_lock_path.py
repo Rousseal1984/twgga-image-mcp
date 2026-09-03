@@ -34,7 +34,7 @@ def test_python_and_rust_share_the_same_default_large_size_tier_lock(tmp_path: P
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     assert python.returncode == 0, python.stderr
     python_lock = Path(json.loads(python.stdout)).resolve()

@@ -133,8 +133,9 @@ impl ToolEngine {
 }
 
 fn path_text(path: &std::path::Path, context: &str) -> Result<String, ToolFailure> {
-    path.to_str()
-        .map(str::to_owned)
+    // 与安装器共用同一套显示归一化：Windows 上 canonicalize 出来的扩展前缀
+    // 不该出现在给客户看的字段里，Python 侧也不会带它。
+    crate::fs::display::display_path(path)
         .ok_or_else(|| ToolFailure(format!("{context} 不是合法 Unicode，无法写入 server_info")))
 }
 

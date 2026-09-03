@@ -22,7 +22,7 @@ def _run(command: list[str], env: dict[str, str]) -> subprocess.CompletedProcess
         env=env,
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
 
 

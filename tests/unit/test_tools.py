@@ -173,7 +173,7 @@ def test_benchmark_cli_does_not_offer_grok(script):
         [sys.executable, str(REPO_ROOT / "tests" / script), "--help"],
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
 
     assert result.returncode == 0, result.stderr
@@ -190,7 +190,7 @@ def test_live_benchmark_requires_explicit_gate_even_when_key_exists(script):
     if script == "perf_bench.py":
         command.append("--out-dir")
         command.append(str(REPO_ROOT / "tests" / "reports"))
-    result = subprocess.run(command, check=False, capture_output=True, text=True, env=env)
+    result = subprocess.run(command, check=False, capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
     assert result.returncode != 0
     assert "TWGGA_RUN_LIVE_TESTS=1" in result.stdout + result.stderr
 

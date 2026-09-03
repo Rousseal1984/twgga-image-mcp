@@ -26,7 +26,7 @@ def rss_kib(pid: int) -> int:
         ["ps", "-o", "rss=", "-p", str(pid)],
         check=False,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
     )
     if result.returncode != 0 or not result.stdout.strip():
         raise RuntimeError(f"unable to read RSS for pid={pid}: {result.stderr.strip()}")
@@ -215,7 +215,7 @@ def multiprocess_idle(command: list[str], count: int) -> dict[str, Any]:
 
 
 def command_version(command: list[str]) -> str:
-    result = subprocess.run(command, check=False, capture_output=True, text=True)
+    result = subprocess.run(command, check=False, capture_output=True, text=True, encoding="utf-8", errors="replace")
     return (result.stdout or result.stderr).strip().splitlines()[0]
 
 

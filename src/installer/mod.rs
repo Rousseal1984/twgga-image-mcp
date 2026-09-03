@@ -292,6 +292,12 @@ fn validated_base_url(raw: &str) -> Result<String, InstallError> {
     Ok(url.as_str().trim_end_matches('/').to_owned())
 }
 
+/// 路径转字符串，**不做显示归一化**。
+///
+/// 这个函数的产物既进状态提示，也进写给客户端的环境变量（`TWGGA_SAVE_DIR` 等），
+/// 而后者是服务端真要拿去解析目录的。Windows 的 `\\?\` 扩展前缀是超过 MAX_PATH
+/// 的路径唯一能被打开的形式，剥掉它会让装在长路径下的安装失效。
+/// 展示归一化只用在纯粹给人看的地方，见 `crate::fs::display`。
 fn path_text(path: &Path, context: &'static str) -> Result<String, InstallError> {
     path.to_str()
         .map(str::to_owned)
