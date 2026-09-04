@@ -127,10 +127,13 @@ jobs:
             exit 1
           fi
 
+      # 直接跑 cargo audit，而不是 rustsec/audit-check：那个 action 要把结果写成
+      # check run，需要 checks: write。为了一个报告形式就给整个 job 的令牌加写权限
+      # 不划算 —— 这个 job 还跑着十来个别的步骤。审计失败在这里同样是红的。
       - name: Cargo audit
-        uses: rustsec/audit-check@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
 
   native-release-build:
     name: ${{ matrix.name }}
