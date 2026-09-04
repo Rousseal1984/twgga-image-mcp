@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="TWGGA IMAGE — GPT Image 2 MCP server" width="820">
+  <img src="assets/banner.svg?v=2" alt="TWGGA IMAGE — GPT Image 2 MCP server" width="820">
 </p>
 
 # TWGGA 画图 MCP
