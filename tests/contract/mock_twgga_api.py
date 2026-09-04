@@ -62,7 +62,7 @@ def truncated_png_bytes() -> bytes:
 def large_png_bytes(target_size: int) -> bytes:
     base = png_bytes()
     payload_size = max(0, target_size - len(base) - 12)
-    ancillary = _chunk(b"miCu", b"\x5a" * payload_size)
+    ancillary = _chunk(b"twGa", b"\x5a" * payload_size)
     return base[:-12] + ancillary + base[-12:]
 
 
