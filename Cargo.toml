@@ -1,6 +1,6 @@
 [package]
 name = "twgga-image-mcp"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 rust-version = "1.88"
 description = "Native Rust MCP server for Twgga GPT Image 2"
