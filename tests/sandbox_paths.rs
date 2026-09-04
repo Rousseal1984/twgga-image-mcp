@@ -1,5 +1,12 @@
 use std::{collections::BTreeMap, fs, sync::Arc};
 
+// 这两个只被下面那个 #[cfg(unix)] 测试用到。它们原先没有门控，于是 Windows 上
+// clippy 判为 unused —— 但直接删掉会打断 Linux/macOS 的编译，正确做法是按
+// 与使用处相同的 cfg 门控。
+#[cfg(unix)]
+use bytes::Bytes;
+#[cfg(unix)]
+use futures_util::stream;
 use image::{ImageFormat, Rgb, RgbImage};
 use twgga_image_mcp::{
     config::{AppPaths, EnvironmentSnapshot, PathSource},
