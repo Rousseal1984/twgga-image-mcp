@@ -1,64 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="240" viewBox="0 0 880 240" role="img" aria-label="TWGGA IMAGE — GPT Image 2 MCP server">
   <!--
-    站点品牌配色：克莱因蓝 #002fa7 配纸面 #f1eee7，与 twgga.work 一致。
-    此前这里是 fork 来的深蓝底配青色，并把站点 logo 关在一个带引脚的芯片外框里 ——
-    外框是那套设计的母题，与本站无关，只会挡住标识本身。
+    黑底白 logo。fork 原设计的深蓝底、青色和「带引脚芯片」外框已整组移除，
+    这里不再有任何把标识框住的容器。
   -->
   <defs>
     <pattern id="grid" width="28" height="28" patternUnits="userSpaceOnUse">
-      <path d="M28 0H0V28" fill="none" stroke="#002fa7" stroke-width="0.5" opacity="0.06"/>
+      <path d="M28 0H0V28" fill="none" stroke="#ffffff" stroke-width="0.5" opacity="0.045"/>
     </pattern>
-    <radialGradient id="glow">
-      <stop offset="0" stop-color="#002fa7" stop-opacity="0.09"/>
-      <stop offset="1" stop-color="#002fa7" stop-opacity="0"/>
-    </radialGradient>
   </defs>
 
-  <rect x="1" y="1" width="878" height="238" rx="24" fill="#f1eee7"/>
+  <rect x="1" y="1" width="878" height="238" rx="24" fill="#000000"/>
   <rect x="1" y="1" width="878" height="238" rx="24" fill="url(#grid)"/>
-  <ellipse cx="120" cy="120" rx="200" ry="170" fill="url(#glow)"/>
-  <rect x="1.5" y="1.5" width="877" height="237" rx="23.5" fill="none" stroke="#002fa7" stroke-opacity="0.22" stroke-width="1.5"/>
+  <rect x="1.5" y="1.5" width="877" height="237" rx="23.5" fill="none" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5"/>
 
   <!--
     站点 logo，路径取自 assets/twgga-logo.svg，未作改动。
     变换把图形的 136..376 见方映射到 (48,60) 起、边长 120 的方框，
-    右下角落在 (168,180)。原图是白底黑徽章；此处徽章取品牌蓝、字形取纸面色，
-    切角方块与衬线 T 的轮廓一点没动。没有任何外框。
+    右下角落在 (168,180)。原图是黑徽章白字；这里整体取白，衬线 T 用底色
+    镂空出来，明暗关系与原图一致。切角方块与 T 的轮廓一点没动，没有外框。
   -->
   <g transform="translate(48 60) scale(0.5) translate(-136.001 -136.001)">
     <g transform="matrix(1,0,0,1,5.398399,1.470356)">
-      <path d="M130.603,187.418L183.49,134.531L370.6,134.531L370.6,322.371L318.443,374.528L130.603,374.528L130.603,187.418Z" fill="#002fa7"/>
-      <path d="M254.47,178.599C252.581,178.577 248.55,178.6 240.34,178.868C224.568,179.382 214.379,202.111 212.789,208.929L204.095,209.023L205.904,165.378L285.771,165.378L285.771,290.384C286.083,293.538 288.546,300.952 304.249,304.626L304.249,312.697L235.992,312.697L235.992,304.626C251.694,300.952 254.157,293.538 254.47,290.384L254.47,178.599Z" fill="#f1eee7"/>
-      <path d="M309.609,165.378L341.143,165.378L343.724,209.023L334.985,209.023L309.609,165.378Z" fill="#f1eee7"/>
+      <path d="M130.603,187.418L183.49,134.531L370.6,134.531L370.6,322.371L318.443,374.528L130.603,374.528L130.603,187.418Z" fill="#ffffff"/>
+      <path d="M254.47,178.599C252.581,178.577 248.55,178.6 240.34,178.868C224.568,179.382 214.379,202.111 212.789,208.929L204.095,209.023L205.904,165.378L285.771,165.378L285.771,290.384C286.083,293.538 288.546,300.952 304.249,304.626L304.249,312.697L235.992,312.697L235.992,304.626C251.694,300.952 254.157,293.538 254.47,290.384L254.47,178.599Z" fill="#000000"/>
+      <path d="M309.609,165.378L341.143,165.378L343.724,209.023L334.985,209.023L309.609,165.378Z" fill="#000000"/>
     </g>
   </g>
 
   <g font-family="Inter, 'SF Pro Display', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif">
     <text x="200" y="94" font-size="58" font-weight="820" letter-spacing="1.2">
-      <tspan fill="#002fa7">TWGGA</tspan><tspan fill="#14161a"> IMAGE</tspan>
+      <tspan fill="#ffffff">TWGGA</tspan><tspan fill="#8b8f96"> IMAGE</tspan>
     </text>
-    <text x="202" y="124" font-size="14" font-weight="600" fill="#5b6270" letter-spacing="1.2">GPT IMAGE 2 · MCP IMAGE TOOLKIT</text>
+    <text x="202" y="124" font-size="14" font-weight="600" fill="#9aa0a8" letter-spacing="1.2">GPT IMAGE 2 · MCP IMAGE TOOLKIT</text>
   </g>
 
   <g font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="600">
-    <rect x="200" y="146" width="132" height="30" rx="9" fill="#ffffff" stroke="#002fa7" stroke-opacity="0.35"/>
-    <circle cx="217" cy="161" r="4" fill="#002fa7"/>
-    <text x="228" y="166" fill="#1d2430">gpt-image-2</text>
+    <rect x="200" y="146" width="132" height="30" rx="9" fill="#141414" stroke="#ffffff" stroke-opacity="0.28"/>
+    <circle cx="217" cy="161" r="4" fill="#ffffff"/>
+    <text x="228" y="166" fill="#e8e8e8">gpt-image-2</text>
 
-    <rect x="342" y="146" width="132" height="30" rx="9" fill="#ffffff" stroke="#002fa7" stroke-opacity="0.35"/>
-    <circle cx="359" cy="161" r="4" fill="#002fa7"/>
-    <text x="370" y="166" fill="#1d2430">twgga.work</text>
+    <rect x="342" y="146" width="132" height="30" rx="9" fill="#141414" stroke="#ffffff" stroke-opacity="0.28"/>
+    <circle cx="359" cy="161" r="4" fill="#ffffff"/>
+    <text x="370" y="166" fill="#e8e8e8">twgga.work</text>
 
-    <rect x="484" y="146" width="118" height="30" rx="9" fill="#ffffff" stroke="#9aa2b1" stroke-opacity="0.6"/>
-    <path d="M501 156L506 161L501 166" fill="none" stroke="#5b6270" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="514" y="166" fill="#3b434f">MCP SERVER</text>
+    <rect x="484" y="146" width="118" height="30" rx="9" fill="#141414" stroke="#ffffff" stroke-opacity="0.16"/>
+    <path d="M501 156L506 161L501 166" fill="none" stroke="#9aa0a8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="514" y="166" fill="#bfc4ca">MCP SERVER</text>
   </g>
 
-  <line x1="200" y1="196" x2="832" y2="196" stroke="#002fa7" stroke-opacity="0.18"/>
-  <g font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#6b7280">
+  <line x1="200" y1="196" x2="832" y2="196" stroke="#ffffff" stroke-opacity="0.14"/>
+  <g font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="12.5" fill="#8b8f96">
     <text x="200" y="216">v0.4.0</text>
-    <circle cx="261" cy="212" r="2" fill="#9aa2b1"/>
+    <circle cx="261" cy="212" r="2" fill="#5c6066"/>
     <text x="274" y="216">github.com/Rousseal1984/twgga-image-mcp</text>
-    <text x="832" y="216" text-anchor="end" fill="#5b6270">GENERATE · EDIT · COMPOSE</text>
+    <text x="832" y="216" text-anchor="end" fill="#9aa0a8">GENERATE · EDIT · COMPOSE</text>
   </g>
 </svg>
