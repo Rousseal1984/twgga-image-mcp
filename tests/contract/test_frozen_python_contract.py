@@ -6,22 +6,13 @@ import sys
 from pathlib import Path
 
 from tests.contract.capture_python_fixtures import FIXTURE_ROOT, REPO_ROOT, collect
+from tests.contract.differential import drop_platform_dependent
 
 
-# 冻结的基线以 CI 所在的 POSIX 为准。其中一条用例把解析后的输入路径回显进报错，
-# 而 "/definitely/missing.png" 在 Windows 上会解析成当前盘符下的路径 ——
-# 同一个逻辑输入的两种平台渲染，没有共同的期望值，归一化也解决不了。
-# 因此在 Windows 上只摘掉这一条，其余仍然严格比对。
-_PLATFORM_DEPENDENT = (
-    {"validation-calls.json": ("edit_missing_image",)} if sys.platform == "win32" else {}
-)
-
-
-def _drop_platform_dependent(name: str, value: object) -> object:
-    keys = _PLATFORM_DEPENDENT.get(name)
-    if not keys or not isinstance(value, dict):
-        return value
-    return {k: v for k, v in value.items() if k not in keys}
+# 平台相关的排除定义在 tests/contract/differential.py，实跑差分也要用同一份：
+# 此前这份判断只存在于本文件，于是同一条用例在差分比对里没有被摘掉，
+# Windows 上一直红。
+_drop_platform_dependent = drop_platform_dependent
 
 
 def test_python_reference_matches_frozen_stdio_contract() -> None:

@@ -64,8 +64,28 @@ def normalize_text(text: str) -> str:
     return text
 
 
+# 这条用例把解析后的输入路径回显进报错。"/definitely/missing.png" 在 Windows 上
+# 是「当前盘符的根相对路径」：Python 原样保留反斜杠形式，Rust 解析出盘符。两者都
+# 不算错，是同一逻辑输入在同一平台上的两种渲染，没有共同期望值，归一化也解决不
+# 了。因此在 Windows 上只摘掉这一条，其余仍然严格比对；Linux 上两边都是
+# /definitely/missing.png，照常参与。
+#
+# 定义放在这里而不是某个测试里，是因为冻结基线（实跑 vs 固化）与实跑差分
+# （Python vs Rust）都要用；此前只有前者做了排除，后者在 Windows 上就一直红。
+PLATFORM_DEPENDENT_STDIO = (
+    {"validation-calls.json": ("edit_missing_image",)} if sys.platform == "win32" else {}
+)
+
+
+def drop_platform_dependent(name: str, value: Any) -> Any:
+    keys = PLATFORM_DEPENDENT_STDIO.get(name)
+    if not keys or not isinstance(value, dict):
+        return value
+    return {key: item for key, item in value.items() if key not in keys}
+
+
 def normalize_stdio(name: str, value: Any) -> Any:
-    value = normalize(value)
+    value = drop_platform_dependent(name, normalize(value))
     if name == "initialize-2024-11-05.json":
         value["result"]["serverInfo"]["version"] = "<IMPLEMENTATION_VERSION>"
     if name == "server-info.json":

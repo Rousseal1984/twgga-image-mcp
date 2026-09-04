@@ -138,8 +138,8 @@
   "batch_quality_serial_gap": {
     "initialize_protocol": "2024-11-05",
     "metrics": {
-      "max_active_api_requests": 2,
-      "serial_gap_at_least_1_4_seconds": false
+      "max_active_api_requests": 1,
+      "serial_gap_at_least_1_4_seconds": true
     },
     "requests": [
       {
@@ -156,7 +156,7 @@
           "model": "gpt-image-2",
           "prompt": "批量串行 [scenario:b64]",
           "response_format": "url",
-          "size": "1024x1024"
+          "size": "2048x1152"
         },
         "multipart_files": [
           {
@@ -184,7 +184,7 @@
           "model": "gpt-image-2",
           "prompt": "批量串行 [scenario:b64]",
           "response_format": "url",
-          "size": "1024x1024"
+          "size": "2048x1152"
         },
         "multipart_files": [
           {
@@ -206,16 +206,18 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"concurrency\": 5,\n  \"total\": 2,\n  \"succeeded\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    }\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"2048x1152\",\n  \"concurrency\": 1,\n  \"total\": 2,\n  \"succeeded\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    }\n  ],\n  \"notes\": [\n    \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
-            "concurrency": 5,
+            "concurrency": 1,
             "failed": 0,
             "model": "gpt-image-2",
-            "notes": [],
+            "notes": [
+              "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size"
+            ],
             "ok": true,
             "results": [
               {
@@ -223,7 +225,8 @@
                 "input": "<CASE_ROOT>\\input/batch-0.png",
                 "model": "gpt-image-2",
                 "notes": [
-                  "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
+                  "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size",
+                  "⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
                 "ok": true,
                 "saved": {
@@ -232,7 +235,7 @@
                   "path": "<CASE_ROOT>\\out\\batch_<TIMESTAMP>_1.png",
                   "size_bytes": 93
                 },
-                "size": "1024x1024",
+                "size": "2048x1152",
                 "used_fallback": false
               },
               {
@@ -240,7 +243,8 @@
                 "input": "<CASE_ROOT>\\input/batch-1.png",
                 "model": "gpt-image-2",
                 "notes": [
-                  "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
+                  "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size",
+                  "⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
                 "ok": true,
                 "saved": {
@@ -249,11 +253,11 @@
                   "path": "<CASE_ROOT>\\out\\batch_<TIMESTAMP>_2.png",
                   "size_bytes": 93
                 },
-                "size": "1024x1024",
+                "size": "2048x1152",
                 "used_fallback": false
               }
             ],
-            "size": "1024x1024",
+            "size": "2048x1152",
             "succeeded": 2,
             "total": 2
           }

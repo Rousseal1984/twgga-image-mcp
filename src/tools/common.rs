@@ -63,11 +63,15 @@ pub fn saved_value(saved: &SavedImage, index: Option<usize>) -> Result<Value, To
     if let Some(index) = index {
         value.insert("index".into(), Value::from(index));
     }
-    let path = saved
-        .path
-        .to_str()
+    // saved.path 是给调用方看、也常被客户直接复制的输出边界，走 display_path。
+    // 路径重构之后这里漏了这一步，于是 Windows 上返回的是 canonicalize 的扩展形式
+    // `\\?\C:\...`；tests/fixtures/mock-cases-before-path-refactor.json 记录的
+    // 重构前形态是干净路径，这条回归本该被 test_path_refactor_baseline 抓住，只是
+    // 那个测试在 CI 里从未以 TWGGA_RUN_CONTRACT_TESTS=1 跑过。
+    // 落盘与路径包含性检查仍用规范化后的原值 —— 那是安全边界，这里只负责显示。
+    let path = crate::fs::display::display_path(&saved.path)
         .ok_or_else(|| ToolFailure("输出路径不是合法 Unicode，无法无损写入 MCP JSON".into()))?;
-    value.insert("path".into(), Value::String(path.to_owned()));
+    value.insert("path".into(), Value::String(path));
     value.insert("size_bytes".into(), Value::from(saved.size_bytes));
     value.insert(
         "actual_size".into(),

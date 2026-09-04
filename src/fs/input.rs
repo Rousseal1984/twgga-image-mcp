@@ -54,7 +54,7 @@ pub fn validate_input_image(
         } else if let Some(root) = policy.input_root() {
             format!(
                 "{label} 必须在 TWGGA_INPUT_ROOT={} 之下（已启用输入路径白名单）；收到 {}",
-                root.display(),
+                crate::fs::display::display_path_lossy(root),
                 python_string_repr(path)
             )
         } else {
@@ -179,7 +179,7 @@ fn open_input_file(
             Dir::open_ambient_dir(&canonical_root, ambient_authority()).map_err(|error| {
                 format!(
                     "无法打开 TWGGA_INPUT_ROOT={}: {error}",
-                    canonical_root.display()
+                    crate::fs::display::display_path_lossy(&canonical_root)
                 )
             })?;
         let file = root_dir
@@ -204,7 +204,7 @@ fn open_input_file(
 fn input_root_error(label: &str, root: &Path, raw: &str) -> String {
     format!(
         "{label} 必须在 TWGGA_INPUT_ROOT={} 之下（已启用输入路径白名单）；收到 {}",
-        root.display(),
+        crate::fs::display::display_path_lossy(root),
         python_string_repr(raw)
     )
 }

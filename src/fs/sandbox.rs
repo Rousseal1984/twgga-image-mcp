@@ -49,7 +49,10 @@ impl OutputSandbox {
         } else {
             SandboxBackend::Capability(Arc::new(
                 Dir::open_ambient_dir(&root_path, ambient_authority()).map_err(|error| {
-                    format!("无法打开 save root {}: {error}", root_path.display())
+                    format!(
+                        "无法打开 save root {}: {error}",
+                        crate::fs::display::display_path_lossy(&root_path)
+                    )
                 })?,
             ))
         };
@@ -212,7 +215,7 @@ impl OutputSandbox {
     fn save_dir_error(&self, raw: &str) -> String {
         format!(
             "save_dir 必须在安全根目录 {} 之下；收到 {}。留空让 MCP 用默认目录，或先把 TWGGA_SAVE_DIR_ROOT 改到你想要的位置。",
-            self.root_path.display(),
+            crate::fs::display::display_path_lossy(&self.root_path),
             python_string_repr(raw)
         )
     }

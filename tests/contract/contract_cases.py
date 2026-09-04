@@ -351,7 +351,11 @@ CASES: tuple[CaseSpec, ...] = (
         {
             "prompt": "批量串行 [scenario:b64]",
             "image_paths": ["<INPUT>/batch-0.png", "<INPUT>/batch-1.png"],
-            "size": "1024x1024",
+            # 2k_quality 档：批量在这一档是逐张串行 + 1.5s 间隔，并发度为 1。
+            # 这条用例的名字一直承诺的就是这个，但参数曾经写的是 1024x1024 ——
+            # 那是标准档、并发 5，于是它既与 batch_standard_concurrency_six 重复，
+            # 又因并发而请求到达顺序不定，在差分比对里随机失败。
+            "size": "2048x1152",
             "model": "gpt-image-2",
         },
         setup="batch",
@@ -502,13 +506,6 @@ def _saved_files(output_root: Path) -> list[dict[str, Any]]:
 _UNORDERED_CASES = {
     "generate_standard_concurrency_six",
     "batch_standard_concurrency_six",
-    # batch_quality_serial_gap 的名字承诺的是高质量档（≥2K，逐张串行 + 1.5s 间隔，
-    # 顺序确定），但它的 arguments 传的是 1024x1024 —— 标准档，并发 5。也就是说
-    # 它实际测的是并发路径，与上一条重复，而「串行 + 间隔」这条契约目前没有任何
-    # 差分覆盖。按它当前的真实行为归入本表可以消除随机失败，但要让它名副其实，
-    # 得把 size 改成 2K 档并重新采集 mock 基线 —— 那份基线必须在 POSIX 上采集，
-    # 在 Windows 上采会把路径分隔符写坏。
-    "batch_quality_serial_gap",
 }
 
 

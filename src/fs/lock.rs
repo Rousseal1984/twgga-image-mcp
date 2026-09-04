@@ -56,13 +56,13 @@ impl BigRequestGate {
             .lock_path
             .parent()
             .ok_or_else(|| LockError::CreateDirectory {
-                path: self.lock_path.display().to_string(),
+                path: crate::fs::display::display_path_lossy(&self.lock_path),
                 detail: "锁路径没有 parent".into(),
             })?;
         tokio::fs::create_dir_all(parent)
             .await
             .map_err(|error| LockError::CreateDirectory {
-                path: parent.display().to_string(),
+                path: crate::fs::display::display_path_lossy(parent),
                 detail: error.to_string(),
             })?;
         let file = tokio::fs::OpenOptions::new()
@@ -73,7 +73,7 @@ impl BigRequestGate {
             .open(self.lock_path.as_ref())
             .await
             .map_err(|error| LockError::OpenFile {
-                path: self.lock_path.display().to_string(),
+                path: crate::fs::display::display_path_lossy(&self.lock_path),
                 detail: error.to_string(),
             })?;
         let started = tokio::time::Instant::now();
