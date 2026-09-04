@@ -1,22 +1,19 @@
 {
-  "baseline_commit": "9c82e742352d55008f56f646044ae38232f7c692",
-  "baseline_result": "42 passed in 0.39s",
-  "source": "tests/unit/test_image2_parameter_matrix.py",
-  "source_sha256": "89f05c2748d8e2ed3321fb9feb3d15911bfc1189368fd0498efe760573b2cee8",
+  "baseline_commit": "91ec8828405d8b65cde30c46f1d1f7673ef192e7",
+  "baseline_result": "36 passed, 1 warning in 0.52s",
   "nodeids": [
-    "tests/unit/test_image2_parameter_matrix.py::test_current_models_are_accepted_exactly[gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_current_models_are_accepted_exactly[gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_legacy_private_and_whitespace_models_are_rejected[gpt-image-2-pro]",
     "tests/unit/test_image2_parameter_matrix.py::test_legacy_private_and_whitespace_models_are_rejected[gpt-image-2-key]",
     "tests/unit/test_image2_parameter_matrix.py::test_legacy_private_and_whitespace_models_are_rejected[ gpt-image-2 ]",
     "tests/unit/test_image2_parameter_matrix.py::test_legacy_private_and_whitespace_models_are_rejected[dall-e-3]",
+    "tests/unit/test_image2_parameter_matrix.py::test_legacy_private_and_whitespace_models_are_rejected[gpt-image-2-openai]",
     "tests/unit/test_image2_parameter_matrix.py::test_removed_model_in_default_environment_is_rejected_before_network",
     "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[None-1024x1024-gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[gpt-image-2-1536x1024-gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[None-2048x1152-gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[gpt-image-2-2048x2048-gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[gpt-image-2-3840x2160-gpt-image-2]",
-    "tests/unit/test_image2_parameter_matrix.py::test_model_routing_matrix[gpt-image-2-1024x1024-gpt-image-2]",
     "tests/unit/test_image2_parameter_matrix.py::test_current_size_matrix_accepts_documented_resolutions[1024x1024]",
     "tests/unit/test_image2_parameter_matrix.py::test_current_size_matrix_accepts_documented_resolutions[1280x720]",
     "tests/unit/test_image2_parameter_matrix.py::test_current_size_matrix_accepts_documented_resolutions[1536x1024]",
@@ -33,11 +30,6 @@
     "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-low]",
     "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-medium]",
     "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-high]",
-    "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-None]",
-    "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-auto]",
-    "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-low]",
-    "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-medium]",
-    "tests/unit/test_image2_parameter_matrix.py::test_generation_model_quality_payload_matrix[gpt-image-2-high]",
     "tests/unit/test_image2_parameter_matrix.py::test_invalid_quality_is_rejected_before_network[ultra]",
     "tests/unit/test_image2_parameter_matrix.py::test_invalid_quality_is_rejected_before_network[draft]",
     "tests/unit/test_image2_parameter_matrix.py::test_invalid_quality_is_rejected_before_network[1]",
@@ -46,5 +38,15 @@
     "tests/unit/test_image2_parameter_matrix.py::test_generation_failure_never_sends_image_model_to_chat",
     "tests/unit/test_image2_parameter_matrix.py::test_edit_failure_never_sends_image_model_to_chat",
     "tests/unit/test_image2_parameter_matrix.py::test_multi_reference_failure_never_sends_image_model_to_chat"
-  ]
+  ],
+  "note": "重新钉在本仓库自己的状态上。这个锁的用途不变：tests/unit/test_image2_parameter_matrix.py 的字节、用例 ID 列表、全过与否，三者任一变化都要有人当场确认后再更新此文件。注意它对注释改动同样敏感——2026-09-04 一次纯注释修改就让哈希漂移，这是刻意的。",
+  "source": "tests/unit/test_image2_parameter_matrix.py",
+  "source_sha256": "70a140c2b364c404aabc88530dee01f82fbdadaabc8870cb190384cf96c7eac6",
+  "superseded_upstream_baseline": {
+    "baseline_commit": "9c82e742352d55008f56f646044ae38232f7c692",
+    "baseline_result": "42 passed in 0.39s",
+    "node_count": 42,
+    "source_sha256": "89f05c2748d8e2ed3321fb9feb3d15911bfc1189368fd0498efe760573b2cee8",
+    "why": "这份基线继承自 fork 来源仓库，锚点 commit 9c82e742 由该项目作者提交，不在本分支历史上。本 fork 自建仓起就改过这个测试文件（收窄模型清单、新增 gpt-image-2-openai「本站未开通的线路必须被拒」这条用例），因此它从来没有匹配过本仓库：nodeids 里多一条本 fork 已删的 test_model_routing_matrix[gpt-image-2-1024x1024-gpt-image-2]，少一条本 fork 新增的 test_legacy_private_and_whitespace_models_are_rejected[gpt-image-2-openai]，且 42 条里有 6 条是重复项、去重后本就是 36 条。它一直在 CI 里红，只是被同一个 job 里更早失败的步骤挡住，直到那步修好才显形。"
+  }
 }
