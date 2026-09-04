@@ -244,7 +244,10 @@ fn claude_json_round_trips_windows_paths_and_preserves_unknown_fields() {
     assert_eq!(raw["theme"], "dark");
     assert_eq!(raw["mcpServers"]["other"]["command"], "other");
     assert_eq!(raw["mcpServers"]["twgga-image"]["custom"], "keep");
-    assert_eq!(raw["mcpServers"]["twgga-image"]["env"]["CUSTOM_ENV"], "keep");
+    assert_eq!(
+        raw["mcpServers"]["twgga-image"]["env"]["CUSTOM_ENV"],
+        "keep"
+    );
     assert!(first.contains(r"C:\\Program Files\\Twgga MCP"));
     assert!(!first.contains("must-not-persist"));
     assert!(!first.contains("TWGGA_API_KEY"));

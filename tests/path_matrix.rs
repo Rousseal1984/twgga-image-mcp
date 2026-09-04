@@ -149,8 +149,11 @@ fn input_root_controls_relative_and_absolute_inputs() {
     let source = source(&temp);
     let input_root = source.home.join("inputs");
     fs::create_dir_all(&input_root).unwrap_or_else(|error| panic!("{error}"));
-    let paths = AppPaths::resolve(&environment([("TWGGA_INPUT_ROOT", "inputs".into())]), source)
-        .unwrap_or_else(|error| panic!("{error}"));
+    let paths = AppPaths::resolve(
+        &environment([("TWGGA_INPUT_ROOT", "inputs".into())]),
+        source,
+    )
+    .unwrap_or_else(|error| panic!("{error}"));
     let policy = PathPolicy::new(&paths);
     let input_root = fs::canonicalize(input_root).unwrap_or_else(|error| panic!("{error}"));
 

@@ -19,7 +19,11 @@ pub fn display_path(path: &Path) -> Option<String> {
     if let Some(rest) = text.strip_prefix(VERBATIM_UNC_PREFIX) {
         return Some(format!(r"\\{rest}"));
     }
-    Some(text.strip_prefix(VERBATIM_PREFIX).unwrap_or(text).to_owned())
+    Some(
+        text.strip_prefix(VERBATIM_PREFIX)
+            .unwrap_or(text)
+            .to_owned(),
+    )
 }
 
 /// 同上，但在路径含非 Unicode 字节时退回 `Path::display` 的有损渲染，
@@ -56,7 +60,10 @@ mod tests {
     #[test]
     fn the_prefix_constant_is_exactly_the_windows_verbatim_marker() {
         assert_eq!(VERBATIM_PREFIX.len(), 4);
-        assert_eq!(VERBATIM_PREFIX.chars().collect::<Vec<_>>(), vec!['\\', '\\', '?', '\\']);
+        assert_eq!(
+            VERBATIM_PREFIX.chars().collect::<Vec<_>>(),
+            vec!['\\', '\\', '?', '\\']
+        );
         assert_eq!(VERBATIM_UNC_PREFIX, "\\\\?\\UNC\\");
     }
 

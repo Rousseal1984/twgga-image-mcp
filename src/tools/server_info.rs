@@ -246,10 +246,7 @@ mod tests {
         // 断言的是「报出来的就是本 crate 的版本」，而不是某个写死的数字 ——
         // 写死会让每次发版都莫名其妙地红一次，而它本来要守的契约与版本号具体是多少无关。
         assert_eq!(info["version"], env!("CARGO_PKG_VERSION"));
-        assert_eq!(
-            info["available_models"],
-            serde_json::json!(["gpt-image-2"])
-        );
+        assert_eq!(info["available_models"], serde_json::json!(["gpt-image-2"]));
         assert_eq!(info["grok_channel_enabled"], false);
         assert_eq!(info["api_key_configured"], true);
         assert!(info["retry_policy"]["concurrency_2k_4k"].as_str().is_some_and(|text| text.contains("tokio::sync::Semaphore") && text.contains("fs4")));

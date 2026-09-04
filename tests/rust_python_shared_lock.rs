@@ -41,7 +41,9 @@ asyncio.run(main())
         if let Ok(Some(status)) = child.try_wait() {
             // 子进程先退出了：它不会再拿锁了，等下去没有意义，
             // 而且它的输出正是唯一能说明原因的东西。
-            let output = child.wait_with_output().unwrap_or_else(|error| panic!("{error}"));
+            let output = child
+                .wait_with_output()
+                .unwrap_or_else(|error| panic!("{error}"));
             panic!(
                 "Python reference exited early with {status}\n--- stdout ---\n{}\n--- stderr ---\n{}",
                 String::from_utf8_lossy(&output.stdout),

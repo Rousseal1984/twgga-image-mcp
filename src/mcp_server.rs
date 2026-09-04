@@ -72,8 +72,10 @@ impl ServerHandler for TwggaServer {
             .enable_resources_with(resources)
             .enable_tools_with(tools)
             .build();
-        ServerInfo::new(capabilities)
-            .with_server_info(Implementation::new("twgga-image", env!("CARGO_PKG_VERSION")))
+        ServerInfo::new(capabilities).with_server_info(Implementation::new(
+            "twgga-image",
+            env!("CARGO_PKG_VERSION"),
+        ))
     }
 
     fn list_tools(

@@ -199,7 +199,10 @@ mod tests {
     fn config() -> Config {
         Config::from_map(&BTreeMap::from([
             ("HOME".into(), "/tmp/twgga-download-home".into()),
-            ("TWGGA_SAVE_DIR_ROOT".into(), "/tmp/twgga-download-out".into()),
+            (
+                "TWGGA_SAVE_DIR_ROOT".into(),
+                "/tmp/twgga-download-out".into(),
+            ),
             (
                 "TWGGA_TRUSTED_DOWNLOAD_HOSTS".into(),
                 "oss.filenest.top".into(),

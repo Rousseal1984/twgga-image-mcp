@@ -294,7 +294,9 @@ mod tests {
         assert_eq!(model, STANDARD_MODEL);
         assert_eq!(
             notes,
-            vec!["size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size"]
+            vec![
+                "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size"
+            ]
         );
     }
 

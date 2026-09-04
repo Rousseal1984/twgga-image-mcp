@@ -1,7 +1,5 @@
 use std::{collections::BTreeMap, fs, sync::Arc};
 
-use bytes::Bytes;
-use futures_util::stream;
 use image::{ImageFormat, Rgb, RgbImage};
 use twgga_image_mcp::{
     config::{AppPaths, EnvironmentSnapshot, PathSource},
@@ -181,6 +179,10 @@ fn windows_junction_and_unc_escape_are_rejected() {
 
 #[cfg(windows)]
 #[test]
+// 仓库把 print_stderr 设为 deny，为的是别让代码随手往终端写东西。这个测试是
+// 正当例外：建 SMB 共享要管理员权限，拿不到就跳过；不打印原因，跑测试的人只会
+// 看到一条静默通过的用例，误以为网络共享那条路径已经验过。
+#[allow(clippy::print_stderr)]
 fn windows_unc_share_can_be_the_actual_output_capability_root() {
     struct ShareGuard(String);
 

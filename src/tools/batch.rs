@@ -48,7 +48,11 @@ impl ToolEngine {
         // 大尺寸串行。参考实现是靠「≥2K 自动切到另一条队列、而那条队列串行」间接做到的；
         // 本站只有一条线路，那条间接链路不存在，因此直接按尺寸判断，保住同一个意图。
         // 一张 ≥2K 的图会长时间占用处理资源，而可并行的容量有限。
-        let concurrency = if is_large_tier(size_tier(&size)) { 1 } else { 5 };
+        let concurrency = if is_large_tier(size_tier(&size)) {
+            1
+        } else {
+            5
+        };
         let output_dir = location
             .absolute
             .to_str()

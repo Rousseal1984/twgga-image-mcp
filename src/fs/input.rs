@@ -66,7 +66,10 @@ pub fn validate_input_image(
         .metadata()
         .map_err(|error| format!("{label} 无法 stat: {error}"))?;
     if !metadata.is_file() {
-        return Err(format!("{label} 不存在: {}", crate::fs::display::display_path_lossy(&requested)));
+        return Err(format!(
+            "{label} 不存在: {}",
+            crate::fs::display::display_path_lossy(&requested)
+        ));
     }
     let size_bytes = metadata.len();
     if size_bytes > MAX_INPUT_FILE_BYTES {
@@ -163,8 +166,12 @@ fn open_input_file(
 ) -> Result<(PathBuf, File), String> {
     if let Some(root) = policy.input_root() {
         let canonical_root = root.to_path_buf();
-        let canonical_target = std::fs::canonicalize(requested)
-            .map_err(|_| format!("{label} 不存在: {}", crate::fs::display::display_path_lossy(&requested)))?;
+        let canonical_target = std::fs::canonicalize(requested).map_err(|_| {
+            format!(
+                "{label} 不存在: {}",
+                crate::fs::display::display_path_lossy(requested)
+            )
+        })?;
         let relative = canonical_target
             .strip_prefix(&canonical_root)
             .map_err(|_| input_root_error(label, &canonical_root, raw))?;
@@ -183,7 +190,10 @@ fn open_input_file(
 
     let file = File::open(requested).map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
-            format!("{label} 不存在: {}", crate::fs::display::display_path_lossy(&requested))
+            format!(
+                "{label} 不存在: {}",
+                crate::fs::display::display_path_lossy(requested)
+            )
         } else {
             format!("{label} 读取失败: {error}")
         }

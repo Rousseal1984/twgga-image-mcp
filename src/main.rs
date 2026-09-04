@@ -3,13 +3,13 @@
 use std::{error::Error, io::Write, path::PathBuf};
 
 use clap::{Parser, Subcommand};
+use rmcp::ServiceExt;
+use tracing_subscriber::EnvFilter;
 use twgga_image_mcp::{
     app::AppState,
     installer::{self, InstallOptions, ResetOptions},
     mcp_server::TwggaServer,
 };
-use rmcp::ServiceExt;
-use tracing_subscriber::EnvFilter;
 
 #[derive(Debug, Parser)]
 #[command(

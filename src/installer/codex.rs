@@ -97,10 +97,9 @@ pub fn parse_config_launch(input: &str) -> Result<Option<ClientLaunchSpec>, Inst
         .ok_or_else(|| InstallError::InvalidCodex("twgga-image.args 必须是 array".into()))?
         .iter()
         .map(|value| {
-            value
-                .as_str()
-                .map(OsString::from)
-                .ok_or_else(|| InstallError::InvalidCodex("twgga-image.args 只能包含 string".into()))
+            value.as_str().map(OsString::from).ok_or_else(|| {
+                InstallError::InvalidCodex("twgga-image.args 只能包含 string".into())
+            })
         })
         .collect::<Result<Vec<_>, _>>()?;
     let env = server
@@ -156,7 +155,9 @@ fn environment_table(server: &mut Table) -> Result<&mut Table, InstallError> {
     server
         .get_mut("env")
         .and_then(Item::as_table_mut)
-        .ok_or_else(|| InstallError::InvalidCodex("mcp_servers.twgga-image.env 必须是 table".into()))
+        .ok_or_else(|| {
+            InstallError::InvalidCodex("mcp_servers.twgga-image.env 必须是 table".into())
+        })
 }
 
 fn parse_environment(table: &Table) -> Result<BTreeMap<String, String>, InstallError> {
