@@ -27,7 +27,7 @@
 ### 2.1 一键安装（推荐）
 
 ```bash
-git clone https://github.com/Subaru486desuwa/twgga-image-mcp.git
+git clone https://github.com/Rousseal1984/twgga-image-mcp.git
 cd twgga-image-mcp
 python install.py
 ```

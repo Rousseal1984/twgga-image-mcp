@@ -52,12 +52,12 @@ Grok 生图渠道暂时关闭，待服务器支持后再启用；即使配置旧
 - 运行时不需要 Python、pip、httpx 或 Pillow；
 - 提供 `install/reset/doctor/version`；
 - Python v0.2.0 reference 永久保留在
-  [`python-reference`](https://github.com/Subaru486desuwa/twgga-image-mcp/tree/python-reference) 分支，
+  [`python-reference`](https://github.com/Rousseal1984/twgga-image-mcp/tree/python-reference) 分支，
   main 中的兼容源码与差分测试也继续保留。
 
 ### Rust binary（推荐）
 
-从 [最新 Release](https://github.com/Subaru486desuwa/twgga-image-mcp/releases/latest) 下载平台对应文件并
+从 [最新 Release](https://github.com/Rousseal1984/twgga-image-mcp/releases/latest) 下载平台对应文件并
 核对 `SHA256SUMS`：
 
 ```bash
@@ -99,7 +99,7 @@ target/release/twgga-image-mcp install --yes --dev \
 
 ```bash
 git clone --branch python-reference --depth 1 \
-  https://github.com/Subaru486desuwa/twgga-image-mcp.git twgga-image-mcp-python
+  https://github.com/Rousseal1984/twgga-image-mcp.git twgga-image-mcp-python
 cd twgga-image-mcp-python
 python install.py
 ```
@@ -267,7 +267,7 @@ JSON/TOML；由客户端进程环境、macOS Keychain 或 tool 的既有 `api_ke
 Rust/Python 同机启动与 RSS 原始数据见 [docs/rust-benchmark.md](docs/rust-benchmark.md)。当前 arm64
 Mac 的 Rust idle RSS 中位数为 9,504 KiB，Python 为 66,080 KiB。Linux x86_64、macOS
 x86_64/arm64 与 Windows x86_64 的原生构建和测试已在
-[CI run 32631626392](https://github.com/Subaru486desuwa/twgga-image-mcp/actions/runs/32631626392)
+[CI run 32631626392](https://github.com/Rousseal1984/twgga-image-mcp/actions/runs/32631626392)
 通过；本机 RSS 数据仍只代表报告所列的 Apple Silicon 测试环境。
 
 `tests/` 下两个独立脚本，直接 in-process import `server.py` 调 `image_generate`，不走 stdio MCP（避免子进程开销污染样本）。真实请求需要有效 key，并且只有精确设置 `TWGGA_RUN_LIVE_TESTS=1` 才会启动；不带 key 用 `--dry-run` 也能验证脚本/导入/校验链路。

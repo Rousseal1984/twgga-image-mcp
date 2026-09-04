@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.88"
 description = "Native Rust MCP server for Twgga GPT Image 2"
 license = "MIT"
-repository = "https://github.com/Subaru486desuwa/twgga-image-mcp"
+repository = "https://github.com/Rousseal1984/twgga-image-mcp"
 
 [dependencies]
 async-trait = "0.1.92"
