@@ -496,9 +496,19 @@ def _saved_files(output_root: Path) -> list[dict[str, Any]]:
     return files
 
 
+# 这些用例并发发出多个上游请求，mock server 记录到的先后是竞态的结果，
+# 不是契约的一部分 —— 标准档批量走 buffer_unordered，实现明确不保证顺序。
+# 比对前按内容排序，比的是「两个实现发出的请求集合相同」，而不是巧合的到达次序。
 _UNORDERED_CASES = {
     "generate_standard_concurrency_six",
     "batch_standard_concurrency_six",
+    # batch_quality_serial_gap 的名字承诺的是高质量档（≥2K，逐张串行 + 1.5s 间隔，
+    # 顺序确定），但它的 arguments 传的是 1024x1024 —— 标准档，并发 5。也就是说
+    # 它实际测的是并发路径，与上一条重复，而「串行 + 间隔」这条契约目前没有任何
+    # 差分覆盖。按它当前的真实行为归入本表可以消除随机失败，但要让它名副其实，
+    # 得把 size 改成 2K 档并重新采集 mock 基线 —— 那份基线必须在 POSIX 上采集，
+    # 在 Windows 上采会把路径分隔符写坏。
+    "batch_quality_serial_gap",
 }
 
 
