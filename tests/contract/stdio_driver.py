@@ -187,6 +187,11 @@ def isolated_server_env(save_root: Path, overrides: dict[str, str] | None = None
     return env
 
 
+# 一个路径最多会被套几层 JSON 转义。实测见过两层（结构体 → content[].text
+# → 报错文案里再嵌一次），留三层余量；再深的嵌套本身就该当成 bug 处理。
+_MAX_JSON_NESTING = 3
+
+
 def canonicalize(value: Any, replacements: Iterable[tuple[str, str]]) -> Any:
     """Replace deterministic runtime paths while preserving all schema content."""
     if isinstance(value, dict):
@@ -196,14 +201,21 @@ def canonicalize(value: Any, replacements: Iterable[tuple[str, str]]) -> Any:
     if isinstance(value, str):
         result = value
         for source, replacement in replacements:
-            result = result.replace(source, replacement)
-            # 有些响应把同一份结构又以 JSON 文本的形式放在 content[].text 里。
-            # 那份文本里的反斜杠是转义过的，所以原始路径匹配不到 —— 在 Linux/macOS
-            # 上看不出来（路径里本来就没有反斜杠），在 Windows 上会把本机绝对路径
-            # 连同用户名一起留在基线文件里，再随提交进公开仓库。
-            escaped = json.dumps(source)[1:-1]
-            if escaped != source:
-                result = result.replace(escaped, json.dumps(replacement)[1:-1])
+            # 同一个路径会以多种转义深度出现：直接放在字段里是原样；被塞进
+            # content[].text 的 JSON 文本里是一层转义；错误文案里再套一层 JSON 的
+            # 还有两层。只处理其中一种，剩下的就会带着本机绝对路径和用户名留在
+            # 基线里，随提交进公开仓库。
+            #
+            # 这在 Linux/macOS 上完全看不出来 —— POSIX 路径没有反斜杠，转义前后
+            # 一模一样，所以第一种形式就把它们全覆盖了。只有 Windows 会漏。
+            escaped_source, escaped_replacement = source, replacement
+            for _ in range(_MAX_JSON_NESTING):
+                result = result.replace(escaped_source, escaped_replacement)
+                nxt = json.dumps(escaped_source)[1:-1]
+                if nxt == escaped_source:
+                    break  # 无反斜杠可转义，再套一层也不会变
+                escaped_source = nxt
+                escaped_replacement = json.dumps(escaped_replacement)[1:-1]
         return result
     return value
 

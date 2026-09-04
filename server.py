@@ -211,7 +211,7 @@ async def image_generate(
       - 用户提到"FullHD/1080p/横屏视频封面" → "2048x1152"（横）或 "1152x2048"（竖）；
         这两个尺寸均满足当前 16 像素对齐和总像素约束。
       - W 与 H 必须都是 16 的倍数；最长边 ≤3840；长宽比 ≤3:1；总像素 655,360-8,294,400。
-      - **本站只有一条生图线路**，不按尺寸切换模型。上游把 size 当作建议而非要求：
+      - **本站只有一条生图线路**，不按尺寸切换模型。`size` 只是建议而非要求：
         实测请求 1024×1024 会返回 1122×1402，**任何尺寸都可能被重映射**，请核对 saved.actual_size。
 
     [PROMPT 写法建议]
@@ -411,7 +411,7 @@ async def image_generate(
             "notes": notes,
         }
 
-    # 当前实测：任何尺寸都可能被上游重映射；实际像素以 saved.actual_size 为准。原注：被重映射。
+    # 当前实测：任何尺寸都可能被重映射，实际像素以 saved.actual_size 为准。
     # 当前 GPT Image 2 模型只走 Images API；不再把图像模型错误发送到 chat/completions。
     saved: list[dict] = []
     errors: list[str] = []
@@ -420,7 +420,7 @@ async def image_generate(
     aggressive_retry = is_quality or tier in ("2k", "4k")
     # 并发策略（与 image_batch_edit 对齐）：
     #   - 1K + 标准线路 + n>1 → 5 并发（HTML 网页同款）
-    #   - ≥2K → 串行（大图占住上游账号时间长；≥2K 已强制 N=1）
+    #   - ≥2K → 串行（大图处理时间长；≥2K 已强制 N=1）
     can_concurrent = n > 1 and tier in ("small", "1k") and not is_quality
     concurrency = 5 if can_concurrent else 1
     big_size_lock = tier in ("2k", "4k")
@@ -538,12 +538,12 @@ async def image_edit(
 
     [当前线路]
       - 参考图 4K 的旧线路硬阻断已移除；1K/2K/4K 均统一走 /v1/images/edits。
-      - 2K/4K 通过跨进程锁串行请求上游：一张大图会占住一个上游账号相当长时间。
+      - 2K/4K 通过跨进程锁串行发出请求：一张大图的处理时间相当长。
       - 始终通过 saved.actual_size 核对后端实际返回像素。
 
     [路由实现]（实测确定）
       - 所有尺寸统一走 /v1/images/edits multipart（TWGGA唯一真正消费输入图的端点）。
-        Images API 返回错误时直接报错，不把图像模型转发到不兼容的 /v1/chat/completions。
+        Images API 返回错误时直接报错，不把图像模型改投到不兼容的 /v1/chat/completions。
       - mask 现已在所有尺寸支持（不再区分 1K/2K）。
 
     [MASK 工作原理]
@@ -766,7 +766,7 @@ async def image_batch_edit(
 
     [并发策略]
       - gpt-image-2：5 并发（HTML 网页同款）。
-      - ≥2K：串行 + 1.5s gap（大图并发容易打爆上游账号池）。
+      - ≥2K：串行 + 1.5s gap（大图并发容易触发限流）。
       - 任意一张失败不影响其他张；返回 results 里逐张标 ok/error。
 
     [LIMITS]
@@ -825,7 +825,7 @@ async def image_batch_edit(
         return {"ok": False, "error": msg, "errors": [msg], "total": len(image_paths)}
     is_quality = _is_quality_model(eff_model)
     out_dir.mkdir(parents=True, exist_ok=True)
-    # 大尺寸串行。上游是靠「≥2K 自动切到付费队列、而付费队列串行」间接做到这件事的；
+    # 大尺寸串行。参考实现是靠「≥2K 自动切到另一条队列、而那条队列串行」间接做到的；
     # 本站只有一条线路，那条间接链路不存在，因此直接按尺寸判断，保住同一个意图。
     # 对本站而言这个约束只增不减：一张 ≥2K 的图要占住一个订阅号几十秒，而号池是个位数。
     # 每个 ≥2K 调用内部还会另取一把跨进程锁。
@@ -904,14 +904,14 @@ async def image_multi_reference(
 
     [当前线路]
       - 参考图 4K 的旧线路硬阻断已移除；所有尺寸统一走 /v1/images/edits + image[]。
-      - 2K/4K 通过跨进程锁串行请求上游：一张大图会占住一个上游账号相当长时间。
+      - 2K/4K 通过跨进程锁串行发出请求：一张大图的处理时间相当长。
 
     [路由实现]
       - 固定走 /v1/images/edits + 多个 image[] 字段。**TWGGA唯一真正消费输入图的端点**
         （实测 image_tokens 线性 = 560×N）。旧的 generations + image_urls 被TWGGA静默忽略
         （image_tokens=0，等于纯文生图，参考图不起作用），已弃用。
       - 不切线路：本站只有 gpt-image-2 一条
-      - Images API 返回错误时直接报错，不把图像模型转发到不兼容的 /v1/chat/completions。
+      - Images API 返回错误时直接报错，不把图像模型改投到不兼容的 /v1/chat/completions。
 
     [LIMITS]（当前真实状态，会变化）
       - image_paths 长度 2-10 张。
@@ -1187,7 +1187,7 @@ def server_info() -> dict[str, Any]:
             "quality_values": sorted(VALID_IMAGE_QUALITIES),
             "size_route": "本站只有一条生图线路，不按尺寸切换模型",
             "live_observation_2026_08_14": (
-                "实测：请求 1024×1024 返回 1122×1402。上游把 size 只当建议，"
+                "实测：请求 1024×1024 返回 1122×1402。size 只是建议，"
                 "任何尺寸都可能被重映射，调用方必须核对 saved.actual_size。"
             ),
         },
@@ -1211,7 +1211,7 @@ def server_info() -> dict[str, Any]:
             "2k_quality": sorted(VALID_SIZES_2K),
             "4k_quality": sorted(VALID_SIZES_4K),
             "tip": (
-                "本站只有一条生图线路（gpt-image-2）。上游把 size 当作建议而非要求，"
+                "本站只有一条生图线路（gpt-image-2）。size 只是建议而非要求，"
                 "服务端仍可能调整实际像素，始终核对 saved.actual_size。"
             ),
             "two_step_tip": (
@@ -1252,7 +1252,7 @@ def server_info() -> dict[str, Any]:
             "retryable_status": list(RETRYABLE_STATUS),
             "fallback_status": list(FALLBACK_STATUS),
             "route_fallback": "当前 GPT Image 2 模型只走 Images API，不 fallback 到 chat/completions",
-            "schedule_1k": "上游 5xx → 4s+jitter → 重试 → 8s+jitter → 重试（退避重试最多 2 次，共 ≤3 次尝试）；网络层异常（status=0）另有 1 次免费重试不计入此预算（故最坏 ≤4 次）。注：带 Retry-After 的 408/429/5xx 会按头部值 sleep（上限 120s），此时单次等待可能远大于 4s/8s",
+            "schedule_1k": "遇 5xx → 4s+jitter → 重试 → 8s+jitter → 重试（退避重试最多 2 次，共 ≤3 次尝试）；网络层异常（status=0）另有 1 次免费重试不计入此预算（故最坏 ≤4 次）。注：带 Retry-After 的 408/429/5xx 会按头部值 sleep（上限 120s），此时单次等待可能远大于 4s/8s",
             "schedule_2k_4k": "双层锁内：可恢复 5xx → 60s → 重试 1 次（共 2 次尝试）；CF 524 fail fast 不重试（origin 持续慢，等也无用）。单次 attempt 无字节挂起最长 600s，故 2K/4K 最坏 ≈ 两次 600s attempt + 一次 60s 退避；其间整机所有 ≥2K 请求经跨进程锁串行等待。锁等待 >2s 时 notes 会提示在排队",
             "trigger": "size tier ∈ {2k, 4k}",
             "concurrency_2k_4k": (

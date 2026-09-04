@@ -18,7 +18,7 @@
 
 当前仅支持 `gpt-image-2`。Grok 生图渠道暂时关闭，待服务器支持后再启用。
 
-> **先说清一件事**：本站生图由订阅态线路承载，上游把 `size` 当成建议而非要求——请求 `1024x1024` 实测会回 `1122x1402`。**任何尺寸都不保证精确返回**。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，需要精确构图时把画幅要求写进 prompt。
+> **先说清一件事**：`size` 只是建议而非要求——请求 `1024x1024` 实测会回 `1122x1402`。**任何尺寸都不保证精确返回**。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，需要精确构图时把画幅要求写进 prompt。
 
 ---
 
@@ -87,7 +87,7 @@ python install.py --yes
 |--------|------|------|
 | `/v1/models` | ✅ 正常 | 当前 Key 可见 `gpt-image-2` |
 | MCP 握手 | ✅ 正常 | `initialize` + `tools/list` 返回 5 个工具 |
-| `image_generate` | ✅ 已验证 | 出图正常；实际像素由上游决定，见 `saved.actual_size` |
+| `image_generate` | ✅ 已验证 | 出图正常；实际像素见 `saved.actual_size` |
 | `image_edit` | ✅ 已验证 | 单图参考 1024²、2048×1152、3840×2160 可用 |
 
 ### 3.2 如何自行验证
@@ -136,7 +136,7 @@ python install.py --yes
 HTTP 524: A timeout occurred
 ```
 
-原因：TWGGA上游在高负载时响应超过 Cloudflare 120 秒限制。  
+原因：高负载时响应超过 Cloudflare 120 秒限制。  
 处理：MCP 已内置自动重试；仍失败时改小尺寸（如 `1024x1024`）或稍后重试。
 
 **② SSRF 防护拦截图片下载（旧版本 / 已关闭 fake-ip 放行时）**
@@ -194,7 +194,7 @@ flowchart TD
 
 - 首次使用前确认配置是否正确
 - 不确定该用哪个尺寸时查阅 `recommended_sizes`
-- 确认 `saved.actual_size` 与你请求的尺寸差多少（上游不保证精确像素）
+- 确认 `saved.actual_size` 与你请求的尺寸差多少（本站不保证精确像素）
 
 **示例对话**：
 
@@ -352,7 +352,7 @@ image_edit(
 **并发策略**：
 
 - `gpt-image-2`：5 并发
-- ≥2K 批次：串行 + 1.5s 间隔，避免打爆上游账号池
+- ≥2K 批次：串行 + 1.5s 间隔，避免把并发打满
 - 单张失败不影响其他张
 
 **示例对话**：
@@ -489,7 +489,7 @@ Grok 生图渠道暂时关闭。工具只接受 `gpt-image-2`；传入 Grok 模�
 | `actual_size` | 从图片 header 读出的真实像素（如 `"1024x1024"`） |
 | `actual_megapixels` | 实际百万像素 |
 
-> **注意**：本站上游把 `size` 只当建议，任何尺寸都可能被重映射；**始终**以 `saved.actual_size` 为准。需要精确构图时把画幅要求写进 prompt。
+> **注意**：`size` 只是建议，任何尺寸都可能被重映射；**始终**以 `saved.actual_size` 为准。需要精确构图时把画幅要求写进 prompt。
 
 ---
 
@@ -517,7 +517,7 @@ MCP 内置多项安全限制：
 | `分组 grok 下模型 gpt-image-2 无可用渠道` | Key 分组填错 | 将可访问两个 Image2 模型的 Key 填入 `TWGGA_API_KEY` |
 | `Grok 生图渠道暂时关闭` | 当前版本主动禁用 Grok | 改用 `gpt-image-2`，等待服务器支持恢复 |
 | `size W/H 必须是 16 的倍数` | 尺寸不符合约束 | 改为如 `1024x1024`、`2048x1152` |
-| `HTTP 524: timeout` | 上游超时 | 改小尺寸或稍后重试；2K/4K 高负载时偶发 |
+| `HTTP 524: timeout` | 请求超时 | 改小尺寸或稍后重试；2K/4K 高负载时偶发 |
 | `SSRF 防护` + `198.18.x.x` | 旧版或 `TWGGA_ALLOW_FAKE_IP_DOWNLOAD=0` | 升级 MCP 或设 `TWGGA_ALLOW_FAKE_IP_DOWNLOAD=1`；`auto` 模式下 URL 失败会自动重试 `b64_json` |
 | `image_path 不存在` | 路径错误 | 使用绝对路径 |
 | `basename 含非法字符` | 文件名不规范 | 仅用字母数字下划线连字符 |

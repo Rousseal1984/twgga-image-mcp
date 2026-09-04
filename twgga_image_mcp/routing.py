@@ -53,7 +53,7 @@ def _resolve_model(requested_model: str | None, size: str) -> tuple[str, list[st
     model = requested_model or DEFAULT_MODEL
     if _is_grok_model(model):
         return model, notes
-    # 本站只有一条线路，不做按尺寸的自动升级。上游把 size 只当建议：实测请求
+    # 本站只有一条线路，不做按尺寸的自动升级。size 只是建议：实测请求
     # 1024x1024 会回 1199x1312，因此大尺寸照常请求，但要提前说清拿不到精确像素。
     if tier in ("2k", "4k"):
         notes.append(
@@ -81,7 +81,7 @@ def _size_note(requested: str, actual: tuple[int, int] | None) -> str | None:
     amp = aw * ah / 1_000_000
     return (
         f"⚠ 实际 {aw}×{ah} ({amp:.2f}MP) ≠ 请求 {rw}×{rh} ({rmp:.2f}MP)。"
-        "本站生图由订阅态线路承载，上游把 size 只当建议、并不保证精确像素，"
+        "本站生图不保证精确像素，size 只是建议，"
         "请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
     )
 

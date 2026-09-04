@@ -32,7 +32,7 @@ class ImageSaveError(Exception):
 # PIL 归一化前的像素上限（防解压炸弹）。4K=8.3MP / 2K=4MP，64MP 留足余量且远低于 Pillow 默认 bomb 阈值。
 _MAX_NORMALIZE_PIXELS = 64 * 1024 * 1024
 
-# URL 下载墙钟总上限（防慢滴流上游无限挂起；httpx 的 120s 只卡单次 connect/read）。
+# URL 下载墙钟总上限（防慢滴流响应无限挂起；httpx 的 120s 只卡单次 connect/read）。
 _DOWNLOAD_TOTAL_TIMEOUT_SECONDS = 180.0
 
 # response_format=url 后，对端返回的 url 成为主下载路径，下载前必须校验防 SSRF。

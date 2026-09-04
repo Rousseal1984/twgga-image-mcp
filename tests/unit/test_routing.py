@@ -46,7 +46,7 @@ class TestResolveModel:
         assert notes == []
 
     # 本站只有一条生图线路，大尺寸照常请求、不切模型，但必须提前说清拿不到精确像素：
-    # 上游把 size 只当建议，实测请求 1024x1024 会回 1122x1402。
+    # size 只是建议，实测请求 1024x1024 会回 1122x1402。
     def test_2k_stays_on_single_route_and_warns(self):
         model, notes = S._resolve_model("gpt-image-2", "2048x2048")
         assert model == S.STANDARD_MODEL
@@ -57,8 +57,8 @@ class TestResolveModel:
         assert model == S.STANDARD_MODEL
         assert any("不保证精确像素" in n for n in notes)
 
-    # 上游那条按量计费、能保证精确像素的线路本站没有开通。请求它必须被明确拒绝，
-    # 而不是静默转发——转发过去客户拿到的是「模型未配置价格」，看起来像 MCP 坏了。
+    # 那条能保证精确像素的线路本站没有开通。请求它必须被明确拒绝，
+    # 而不是静默放行——放行之后客户拿到的是「模型未配置价格」，看起来像 MCP 坏了。
     def test_paid_exact_pixel_route_is_not_offered(self):
         assert S._model_error("gpt-image-2-openai") is not None
 

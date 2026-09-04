@@ -1,9 +1,9 @@
 use super::size::{SizeTier, parse_size, round_to_alignment, size_tier, validate_size};
 
 pub const STANDARD_MODEL: &str = "gpt-image-2";
-// 本站只有一条生图线路。上游那条按量计费、能保证精确像素的线路需要一把真实的
-// OpenAI 付费 Key，尚未开通，因此这里不再登记第二个模型 —— 留着它会让 ≥2K 请求
-// 被自动切过去，而那个模型名背后什么都没有，客户拿到的是「模型未配置价格」。
+// 本站只有一条生图线路。另一条能保证精确像素的线路尚未开通，因此这里不再登记
+// 第二个模型 —— 留着它会让 ≥2K 请求被自动切过去，而那个模型名背后什么都没有，
+// 客户拿到的是「模型未配置价格」。
 pub const SUPPORTED_IMAGE_MODELS: [&str; 1] = [STANDARD_MODEL];
 
 pub fn is_grok_model(model: Option<&str>) -> bool {
@@ -36,7 +36,7 @@ pub fn resolve_model(
     let tier = size_tier(size);
     let mut notes = Vec::new();
     // 不按尺寸切模型：只有一条线路。大尺寸照常请求，但要提前说清拿不到精确像素 ——
-    // 上游把 size 只当建议，实测请求 1024x1024 会回 1122x1402。
+    // size 只是建议，实测请求 1024x1024 会回 1122x1402。
     if is_large_tier(tier) && !is_grok_model(Some(&model)) {
         notes.push(format!(
             "size={size} ({}) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size",
@@ -176,7 +176,7 @@ pub fn size_note(requested: &str, actual: Option<(u32, u32)>) -> Option<String> 
         f64::from(requested_width) * f64::from(requested_height) / 1_000_000.0;
     let actual_megapixels = f64::from(actual_width) * f64::from(actual_height) / 1_000_000.0;
     Some(format!(
-        "⚠ 实际 {actual_width}×{actual_height} ({actual_megapixels:.2}MP) ≠ 请求 {requested_width}×{requested_height} ({requested_megapixels:.2}MP)。本站生图由订阅态线路承载，上游把 size 只当建议、并不保证精确像素，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
+        "⚠ 实际 {actual_width}×{actual_height} ({actual_megapixels:.2}MP) ≠ 请求 {requested_width}×{requested_height} ({requested_megapixels:.2}MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
     ))
 }
 
@@ -270,7 +270,7 @@ mod tests {
     #[test]
     fn model_contract_is_exact_and_preserves_grok_public_error() {
         assert_eq!(model_error(Some(STANDARD_MODEL), STANDARD_MODEL), None);
-        // 上游那条按量计费的精确像素线路本站没有开通，必须与其它未知模型同样被拒 ——
+        // 那条能保证精确像素的线路本站没有开通，必须与其它未知模型同样被拒 ——
         // 静默放行会把请求送到一个背后什么都没有的模型名。
         assert!(model_error(Some("gpt-image-2-openai"), STANDARD_MODEL).is_some());
         assert!(

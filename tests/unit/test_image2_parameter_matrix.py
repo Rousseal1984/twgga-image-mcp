@@ -30,7 +30,7 @@ def test_current_models_are_accepted_exactly(model):
 
 @pytest.mark.parametrize(
     "model",
-    # gpt-image-2-openai 是上游那条本站未开通的付费线路，必须与其它未知模型同样被拒。
+    # gpt-image-2-openai 是本站未开通的那条线路，必须与其它未知模型同样被拒。
     ["gpt-image-2-pro", "gpt-image-2-key", " gpt-image-2 ", "dall-e-3", "gpt-image-2-openai"],
 )
 def test_legacy_private_and_whitespace_models_are_rejected(model):

@@ -7,7 +7,7 @@
 
 ## 威胁模型
 
-主要不可信输入包括 MCP tool arguments、prompt、输入/输出路径、上游 JSON、图片 URL、DNS
+主要不可信输入包括 MCP tool arguments、prompt、输入/输出路径、响应 JSON、图片 URL、DNS
 结果、HTTP header/body、图片编码和本机多个 MCP 进程。攻击目标包括：
 
 - 把 API key 引到攻击者 base URL；
@@ -17,7 +17,7 @@
 - 通过文件覆盖竞争、半写文件、配置截断破坏数据；
 - 通过超大 body、base64、图片炸弹或 chunk 聚合耗尽内存；
 - 通过取消/异常留下跨进程锁或 file descriptor；
-- 通过高分辨率并发打爆上游队列。
+- 通过高分辨率并发把处理队列打满。
 
 不把同一操作系统用户已经拥有的任意调试/内存读取能力视为本程序可抵御的边界。明文 MCP
 客户端配置也不能抵御同一用户读取；Rust 不再把 key 写入客户端配置，macOS 可直接从 Keychain
@@ -35,7 +35,7 @@
   token 和长度 ≥64 的 base64-like run。
 - server 不接受宽泛 `RUST_LOG=trace` 来打开 rmcp/reqwest/hyper transport trace；这些 target
   固定关闭，避免依赖层记录原始 JSON-RPC arguments。对应 mock 在 `RUST_LOG=trace` 下仍通过。
-- `generate_error_redacts_key_and_base64` mock 会让上游主动回显 key 和 PNG base64；Python/Rust
+- `generate_error_redacts_key_and_base64` mock 会让响应主动回显 key 和 PNG base64；Python/Rust
   差分结果均只包含 `[REDACTED]` / `[REDACTED_BASE64]`，stderr 也不含两者。
 - 为兼容冻结的五工具 schema，`api_key` tool 参数暂时保留。推荐仍是进程环境或 Keychain。
 

@@ -121,7 +121,7 @@ class TestValidateImagePath:
     def test_header_only_truncated_jpeg_rejected_before_upload(self, tmp_path):
         path = tmp_path / "truncated.jpg"
         path.write_bytes(_make_jpeg(64, 64))
-        # 旧校验只读 SOF 宽高，会把这个没有像素码流的伪 JPEG 放到上游。
+        # 旧校验只读 SOF 宽高，会把这个没有像素码流的伪 JPEG 直接发出去。
         assert S._detect_actual_size(path.read_bytes()) == (64, 64)
         _, _, _, err = S._validate_image_path(str(path))
         assert err is not None and "完整解码" in err

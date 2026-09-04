@@ -39,15 +39,15 @@
     "result": {
       "content": [
         {
-          "text": "{\n  \"ok\": false,\n  \"error\": \"image_path 不存在: /definitely/missing.png\",\n  \"errors\": [\n    \"image_path 不存在: /definitely/missing.png\"\n  ]\n}",
+          "text": "{\n  \"ok\": false,\n  \"error\": \"image_path 不存在: \\\\definitely\\\\missing.png\",\n  \"errors\": [\n    \"image_path 不存在: \\\\definitely\\\\missing.png\"\n  ]\n}",
           "type": "text"
         }
       ],
       "isError": false,
       "structuredContent": {
-        "error": "image_path 不存在: /definitely/missing.png",
+        "error": "image_path 不存在: \\definitely\\missing.png",
         "errors": [
-          "image_path 不存在: /definitely/missing.png"
+          "image_path 不存在: \\definitely\\missing.png"
         ],
         "ok": false
       }

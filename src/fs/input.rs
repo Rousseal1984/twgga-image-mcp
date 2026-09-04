@@ -96,7 +96,7 @@ pub fn validate_input_image(
         ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP
     ) {
         return Err(format!(
-            "{label} 格式 {} 不受上游支持；请转换为 PNG、JPEG 或 WebP",
+            "{label} 格式 {} 暂不受支持；请转换为 PNG、JPEG 或 WebP",
             format_name(info.format)
         ));
     }

@@ -8,7 +8,7 @@
 
 当前仅支持 `gpt-image-2`，`TWGGA_API_KEY` 必须能看到该模型。
 
-> **关于尺寸**：本站生图由订阅态线路承载，上游把 `size` 只当建议、并不保证精确像素——请求 1024×1024 实测会回 1122×1402。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，请以它们为准；需要精确构图时把画幅要求写进 prompt。
+> **关于尺寸**：`size` 只是建议，本站不保证精确像素——请求 1024×1024 实测会回 1122×1402。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，请以它们为准；需要精确构图时把画幅要求写进 prompt。
 Grok 生图渠道暂时关闭，待服务器支持后再启用；即使配置旧的 Grok 环境变量，安装器也不会写入，工具调用会在发出请求前拒绝 Grok 模型。
 
 ---
@@ -40,7 +40,7 @@ Grok 生图渠道暂时关闭，待服务器支持后再启用；即使配置旧
 
 ---
 
-> **线路说明**：生成与编辑统一走 Images API（`/v1/images/generations` 与 `/v1/images/edits`）。本站只有一条生图线路，不做按尺寸的模型切换；≥2K 仍然串行并加跨进程锁，因为一张大图会占住一个上游账号相当长时间。保留对 `HTTP 400 + Too Many Requests` 与 `data:image/...;base64,...` 返回的兼容处理。
+> **线路说明**：生成与编辑统一走 Images API（`/v1/images/generations` 与 `/v1/images/edits`）。本站只有一条生图线路，不做按尺寸的模型切换；≥2K 仍然串行并加跨进程锁，因为一张大图的处理时间相当长。保留对 `HTTP 400 + Too Many Requests` 与 `data:image/...;base64,...` 返回的兼容处理。
 
 > **Windows 中文提示词**：MCP 会以原生 UTF-8 JSON 发送中文。自行编写 PowerShell 测试脚本时，不要把含中文的 here-string 直接通过管道喂给 `python -`；Windows PowerShell 的 `$OutputEncoding` 可能是 ASCII，导致中文在进入 MCP 前已变成 `?`。请将脚本保存为 UTF-8 文件后执行，或先设置 `$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()`。
 
@@ -171,7 +171,7 @@ image2 路径：
 - W/H 必须是 16 的倍数
 - 最长边不超过 3840；长宽比不超过 3:1
 - 总像素必须在 655,360 到 8,294,400 之间
-- 2K/4K 强制 `n=1` 并加跨进程锁，避免多个 MCP 实例同时打爆上游账号池
+- 2K/4K 强制 `n=1` 并加跨进程锁，避免多个 MCP 实例同时把并发打满
 
 推荐 size：
 
@@ -183,7 +183,7 @@ image2 路径：
 
 ## 尺寸能力矩阵 / Size capability
 
-本站单线路实测：可生成与编辑，但**任何尺寸都不保证精确返回**——上游把 `size` 当建议，实际像素以 `saved.actual_size` 为准。参考图 4K 可直接请求，不做本地拒绝。
+本站单线路实测：可生成与编辑，但**任何尺寸都不保证精确返回**——`size` 只是建议，实际像素以 `saved.actual_size` 为准。参考图 4K 可直接请求，不做本地拒绝。
 
 | 场景 | 可靠性 | 实际输出 |
 |---|---|---|
@@ -197,7 +197,7 @@ image2 路径：
 
 - `/v1/images/edits` 是TWGGA真正消费输入图的端点。当前单图参考的 1024²、2048×1152、3840×2160 edits 已通过实测。
 - 旧的 `generations + reference_image` 和 `generations + image_urls` 路径已经废弃；所有 Image2 参考图请求都不会再转回旧路径或 `/v1/chat/completions`。
-- 参考图 4K 可直接请求；2K/4K 使用进程内 + 跨进程双层锁串行访问上游。
+- 参考图 4K 可直接请求；2K/4K 使用进程内 + 跨进程双层锁串行发出请求。
 
 ---
 
@@ -296,7 +296,7 @@ python tests/perf_bench.py --dry-run
 验证：
 1. 1K 单进程多并发 → 进程内不卡，吞吐近似线性
 2. ≥2K 多进程并发 → 进程内 `asyncio.Semaphore(1)` + 跨进程 `flock` 双层锁串行
-3. CF 524 / 上游 5xx → 重试/fail-fast 策略
+3. CF 524 / 5xx → 重试/fail-fast 策略
 4. `--model` 仅接受 `gpt-image-2`
 
 ```bash

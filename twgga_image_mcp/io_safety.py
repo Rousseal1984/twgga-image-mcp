@@ -127,7 +127,7 @@ def _validate_decoded_image_bytes(
     if decoded_format not in allowed_formats:
         choices = "、".join(sorted(allowed_formats))
         return actual, decoded_format, (
-            f"{label} 格式 {decoded_format or '未知'} 不受上游支持；请转换为 {choices}"
+            f"{label} 格式 {decoded_format or '未知'} 暂不受支持；请转换为 {choices}"
         )
     if actual[0] < 16 or actual[1] < 16:
         return actual, decoded_format, f"{label} 尺寸 {actual[0]}x{actual[1]} 太小，不像正常图片"

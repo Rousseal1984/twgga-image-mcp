@@ -82,8 +82,8 @@ _INPUT_ROOT: Path | None = (
 )
 
 STANDARD_MODEL = "gpt-image-2"
-# TWGGA 目前只有一条生图线路：由 Codex 订阅态承载的 gpt-image-2。
-# 上游那条按量计费、能保证精确像素的线路需要一把真实的 OpenAI 付费 Key，本站尚未开通，
+# TWGGA 目前只有一条生图线路：gpt-image-2。
+# 另一条能保证精确像素的线路本站尚未开通，
 # 因此这里指回同一个模型。留着一个不存在的模型名会让 ≥2K 请求被自动切过去，
 # 客户拿到的是「模型未配置价格」——看起来像 MCP 坏了，其实是路由指向了空气。
 QUALITY_MODEL = STANDARD_MODEL
