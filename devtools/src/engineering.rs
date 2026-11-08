@@ -79,8 +79,8 @@ pub fn stress(binary: &Path, processes: usize, rounds: usize) -> Result<Value> {
     }
     let mut phases = Vec::new();
     for (name, model, size, images) in [
-        ("standard-1k", "gpt-image-2", "1024x1024", 5),
-        ("quality-cross-process-lock", "gpt-image-2", "2048x2048", 1),
+        ("standard-1k", "gpt-image", "1024x1024", 5),
+        ("quality-cross-process-lock", "gpt-image", "2048x2048", 1),
     ] {
         let root = tempfile::tempdir()?;
         let api = MockTwgga::new()?;

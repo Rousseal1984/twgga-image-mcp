@@ -353,7 +353,7 @@ mod tests {
                 prompt: "sketch".into(),
                 image_paths: paths,
                 size: "1024x1024".into(),
-                model: Some("gpt-image-2".into()),
+                model: Some("gpt-image".into()),
                 quality: None,
                 save_dir: None,
                 api_key: None,
@@ -377,7 +377,7 @@ mod tests {
                 prompt: "upscale".into(),
                 image_paths: paths[..2].to_vec(),
                 size: "2048x1152".into(),
-                model: Some("gpt-image-2".into()),
+                model: Some("gpt-image".into()),
                 quality: None,
                 save_dir: None,
                 api_key: None,
@@ -385,7 +385,7 @@ mod tests {
             .await
             .unwrap_or_else(|error| panic!("{error}"));
         assert_eq!(result["succeeded"], 2, "{result}");
-        assert_eq!(result["model"], "gpt-image-2");
+        assert_eq!(result["model"], "gpt-image");
         assert_eq!(result["concurrency"], 1);
         assert_eq!(provider.max_active.load(Ordering::SeqCst), 1);
         let starts = provider.starts.lock().await;

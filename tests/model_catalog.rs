@@ -29,7 +29,7 @@ fn manual_directory_never_fetches_upstream_and_removes_grok_fields() -> Result<(
     server.initialize()?;
     for _ in 0..3 {
         let info = server.call("server_info", json!({}))?;
-        assert_eq!(info["available_models"], json!(["gpt-image-2"]));
+        assert_eq!(info["available_models"], json!(["gpt-image"]));
         assert_eq!(info["model_catalog"]["source"], "manual");
         assert_eq!(info["model_catalog"]["refresh_status"], "not_applicable");
         assert!(info["model_catalog"]["last_success_unix"].is_null());
@@ -67,7 +67,7 @@ fn unknown_manual_models_are_rejected_without_echoing_credentials() -> Result<()
     Ok(())
 }
 
-// 上游 micu 在 ≥2K 时把 gpt-image-2 自动切到 gpt-image-2-openai；本站没有那条线路，
+// 上游 micu 在 ≥2K 时把 gpt-image 自动切到 gpt-image-2-openai；本站没有那条线路，
 // 切过去客户拿到的是「模型未配置价格」。这里守住「不切」，以及那个模型名在本地就被拒。
 #[test]
 fn single_route_never_switches_models_by_size() -> Result<()> {
@@ -82,14 +82,11 @@ fn single_route_never_switches_models_by_size() -> Result<()> {
     for size in ["1024x1024", "2048x1152", "3840x2160"] {
         let result = server.call(
             "image_generate",
-            json!({"prompt":"x", "model":"gpt-image-2","size":size}),
+            json!({"prompt":"x", "model":"gpt-image","size":size}),
         )?;
         assert_eq!(result["ok"], true, "{result}");
-        assert_eq!(result["model"], "gpt-image-2");
-        assert_eq!(
-            api.requests().last().unwrap().fields["model"],
-            "gpt-image-2"
-        );
+        assert_eq!(result["model"], "gpt-image");
+        assert_eq!(api.requests().last().unwrap().fields["model"], "gpt-image");
     }
     let sent = api.requests().len();
     let rejected = server.call(

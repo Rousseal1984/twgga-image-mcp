@@ -63,7 +63,7 @@
               ],
               "default": null,
               "title": "Quality",
-              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image-2 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
+              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
             },
             "save_dir": {
               "anyOf": [
@@ -232,7 +232,7 @@
               ],
               "default": null,
               "title": "Quality",
-              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image-2 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
+              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
             },
             "save_dir": {
               "anyOf": [
@@ -371,7 +371,7 @@
               ],
               "default": null,
               "title": "Quality",
-              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image-2 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
+              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
             },
             "save_dir": {
               "anyOf": [
@@ -467,7 +467,7 @@
               ],
               "default": null,
               "title": "Quality",
-              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image-2 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
+              "description": "MCP 接受的完整选项见 schema。2026-10-09 主站 1K 生成/单图编辑：2.5 模型使用 low/auto/省略；medium/high/xhigh/max 返回 HTTP 400。旧 gpt-image 的 low/medium/high/auto 均成功。已有会话省略时继承所选版本。"
             },
             "save_dir": {
               "anyOf": [

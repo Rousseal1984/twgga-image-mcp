@@ -587,12 +587,12 @@ mod tests {
             .await
             .unwrap_or_else(|error| panic!("{error}"));
         assert_eq!(result["ok"], true, "{result}");
-        assert_eq!(result["model"], "gpt-image-2");
+        assert_eq!(result["model"], "gpt-image");
         assert_eq!(result["requested_n"], 1);
         assert_eq!(result["saved"][0]["actual_size"], "32x24");
         assert_eq!(
             provider.calls.lock().await.as_slice(),
-            &[("gpt-image-2".into(), "1024x1024".into(), Some("url".into()))]
+            &[("gpt-image".into(), "1024x1024".into(), Some("url".into()))]
         );
     }
 
@@ -601,13 +601,13 @@ mod tests {
         let (_temp, engine, provider) = fixture();
         let mut request = params();
         request.size = Some("2048x2048".into());
-        request.model = Some("gpt-image-2".into());
+        request.model = Some("gpt-image".into());
         request.n = 4;
         let result = engine
             .image_generate(request)
             .await
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(result["model"], "gpt-image-2", "{result}");
+        assert_eq!(result["model"], "gpt-image", "{result}");
         assert_eq!(result["requested_n"], 1);
         assert!(result["notes"].as_array().is_some_and(|notes| {
             notes

@@ -57,7 +57,7 @@ du -sh "$twgga_root" "$twgga_root/.twgga-sessions"
 
 ## 质量档位
 
-这里的参数名是 `quality`，不是 Codex 的 `reasoning_effort`。本站只有 gpt-image-2，MCP 接受
+这里的参数名是 `quality`，不是 Codex 的 `reasoning_effort`。本站只有 gpt-image，MCP 接受
 `auto/low/medium/high`，省略时由服务端决定。
 
 可复跑的 Rust 质量矩阵只连接固定的 TWGGA 域名，逐项调用 Rust MCP 的生成、编辑工具。

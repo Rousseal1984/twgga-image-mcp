@@ -339,7 +339,7 @@ mod tests {
                 ("clothing".into(), "red shirt".into()),
                 ("identity".into(), "same face".into()),
             ]),
-            model: "gpt-image-2".into(),
+            model: "gpt-image".into(),
             size: "1024x1024".into(),
             quality: Some("high".into()),
         }

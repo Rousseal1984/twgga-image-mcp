@@ -1,6 +1,10 @@
 use super::size::{SizeTier, parse_size, round_to_alignment, size_tier, validate_size};
 
-pub const STANDARD_MODEL: &str = "gpt-image-2";
+pub const STANDARD_MODEL: &str = "gpt-image";
+/// 2026-11-09 之前本站的对外模型名。站点已下线它（用户拍板：「直接下线」），但 AI 或旧配置
+/// 仍可能传它；MCP 在本地换成 `gpt-image` 再发出，并在 notes 里说明，与上游 micu 处理改名
+/// 的方式相同。发到服务端的永远是新名字。
+pub const LEGACY_STANDARD_MODEL: &str = "gpt-image-2";
 // 本站只有一条生图线路。上游 micu-image-mcp 的目录里还有 gpt-image-2-openai 与
 // 2.5/2.6 的 Flare/Sunburst，这些模型名在本站背后都没有渠道：登记进来，≥2K 请求会被
 // 自动切过去，客户拿到的是「模型未配置价格」。
@@ -10,7 +14,10 @@ pub const STANDARD_MODEL: &str = "gpt-image-2";
 pub const SUPPORTED_IMAGE_MODELS: [&str; 1] = [STANDARD_MODEL];
 
 pub fn canonical_model(model: &str) -> &str {
-    model
+    match model {
+        LEGACY_STANDARD_MODEL => STANDARD_MODEL,
+        _ => model,
+    }
 }
 
 /// 上游用它在模型改名后补试带 `-openai` 后缀的旧 ID；本站没有别名，恒为 None。
@@ -121,7 +128,7 @@ impl ModelRoute {
         validate_choice("output_format", format, output_format_values(&self.model))
     }
 
-    /// gpt-image-2 negotiates response format (url, then b64_json). The Flare and
+    /// gpt-image negotiates response format (url, then b64_json). The Flare and
     /// Sunburst routes of the upstream catalog omit it; this catalog has none of them.
     pub fn response_formats<'a>(
         &self,
@@ -452,9 +459,12 @@ mod tests {
     fn model_contract_is_exactly_one_route() {
         assert_eq!(SUPPORTED_IMAGE_MODELS, [STANDARD_MODEL]);
         assert!(is_supported_model(STANDARD_MODEL));
+        // 旧名只在本地被认作别名，目录里只有新名字。
+        assert!(is_supported_model(LEGACY_STANDARD_MODEL));
+        assert_eq!(canonical_model(LEGACY_STANDARD_MODEL), STANDARD_MODEL);
         // 上游目录里的其他模型在本站背后没有渠道，必须在本地就拒掉。
         for model in [
-            " gpt-image-2 ",
+            " gpt-image ",
             "GPT-IMAGE-2",
             "gpt-image-2-openai",
             "gpt-image-2.5-flare",
@@ -468,6 +478,20 @@ mod tests {
         assert_eq!(canonical_model(STANDARD_MODEL), STANDARD_MODEL);
         assert_eq!(suffix_fallback(STANDARD_MODEL), None);
         assert!(!is_quality_model(STANDARD_MODEL));
+    }
+
+    #[test]
+    fn legacy_name_is_sent_as_the_current_one_with_a_note() {
+        let (route, notes) =
+            ModelRoute::resolve(Some(LEGACY_STANDARD_MODEL), STANDARD_MODEL, "1024x1024");
+        assert_eq!(route.model(), STANDARD_MODEL);
+        assert_eq!(notes, vec!["模型 ID gpt-image-2 已更新为 gpt-image"]);
+        let (route, _) = ModelRoute::resolve(None, LEGACY_STANDARD_MODEL, "1024x1024");
+        assert_eq!(
+            route.model(),
+            STANDARD_MODEL,
+            "旧的 TWGGA_MODEL 配置也换成新名字"
+        );
     }
 
     #[test]

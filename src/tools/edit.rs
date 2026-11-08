@@ -498,7 +498,7 @@ mod tests {
         assert_eq!(
             provider.edits.lock().await.as_slice(),
             &[(
-                "gpt-image-2".into(),
+                "gpt-image".into(),
                 "1024x1024".into(),
                 Some("high".into()),
                 vec!["image".into()],
@@ -516,7 +516,7 @@ mod tests {
                 image_path: Some(source.to_string_lossy().into_owned()),
                 mask_path: None,
                 size: Some("3840x2160".into()),
-                model: Some("gpt-image-2".into()),
+                model: Some("gpt-image".into()),
                 quality: None,
                 output_format: None,
                 save_dir: None,
@@ -528,7 +528,7 @@ mod tests {
             })
             .await
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(high["model"], "gpt-image-2", "{high}");
+        assert_eq!(high["model"], "gpt-image", "{high}");
         let missing = engine
             .image_edit(EditParams {
                 prompt: "x".into(),
@@ -576,7 +576,7 @@ mod tests {
             .image_edit(session_params(serde_json::json!({
                 "prompt": "make clothing red", "image_path": source,
                 "session_id": "new", "context": {"identity": "same face", "clothing": "red shirt"},
-                "model": "gpt-image-2", "size": "1536x1024", "quality": "medium",
+                "model": "gpt-image", "size": "1536x1024", "quality": "medium",
             })))
             .await
             .unwrap();
@@ -594,7 +594,7 @@ mod tests {
         assert_eq!(second["session"]["context"]["identity"], "same face");
         assert_eq!(second["session"]["context"]["clothing"], "red shirt");
         assert_eq!(second["session"]["input_path"], first["saved"]["path"]);
-        assert_eq!(second["model"], "gpt-image-2");
+        assert_eq!(second["model"], "gpt-image");
         assert_eq!(second["size"], "1536x1024");
         let captured = provider.prompts_and_inputs.lock().await;
         assert_eq!(

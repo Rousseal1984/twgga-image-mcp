@@ -212,7 +212,7 @@ fn quick_images_acceptance(binary: &Path, output: &Path, key: &SecretString) -> 
     )?;
     let version = info["structuredContent"]["version"].clone();
     let model = info["structuredContent"]["default_model"].clone();
-    if version != env!("CARGO_PKG_VERSION") || model != "gpt-image-2" {
+    if version != env!("CARGO_PKG_VERSION") || model != "gpt-image" {
         return Err("live probe did not start the expected candidate/default model".into());
     }
     let mut report = Vec::new();
@@ -248,7 +248,7 @@ fn quick_images_acceptance(binary: &Path, output: &Path, key: &SecretString) -> 
         || requests[1]["path"] != "/v1/images/edits"
         || requests
             .iter()
-            // gpt-image-2 negotiates its response format, so the first attempt carries one.
+            // gpt-image negotiates its response format, so the first attempt carries one.
             .any(|request| request["status"] != 200 || request["response_format_present"] != true)
     {
         return Err("live Images-only request/response_format contract failed".into());
@@ -326,14 +326,13 @@ async fn main() -> Result<()> {
         writeln!(
             std::io::stdout().lock(),
             "Access probe: HTTP {status}; image2={}",
-            has("gpt-image-2")
+            has("gpt-image")
         )?;
         return Ok(());
     }
     let generate_model =
-        std::env::var("TWGGA_LIVE_GENERATE_MODEL").unwrap_or_else(|_| "gpt-image-2".into());
-    let edit_model =
-        std::env::var("TWGGA_LIVE_EDIT_MODEL").unwrap_or_else(|_| "gpt-image-2".into());
+        std::env::var("TWGGA_LIVE_GENERATE_MODEL").unwrap_or_else(|_| "gpt-image".into());
+    let edit_model = std::env::var("TWGGA_LIVE_EDIT_MODEL").unwrap_or_else(|_| "gpt-image".into());
     // low keeps a paid acceptance run cheap and quick; any of auto/low/medium/high is accepted.
     let quality = std::env::var("TWGGA_LIVE_QUALITY").unwrap_or_else(|_| "low".into());
     let mut report = Vec::new();

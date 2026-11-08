@@ -6,7 +6,7 @@
 
 把 [TWGGA](https://twgga.work) 的图像接口接入 Claude Code、Claude Desktop、Codex、Cursor 等 MCP 客户端，支持生成图片、连续编辑、批量编辑和多图参考。
 
-当前仅支持 `gpt-image-2`，你的 TWGGA API Key 需要能调用该模型。
+当前仅支持 `gpt-image`，你的 TWGGA API Key 需要能调用该模型。模型名不带版本号：本站生图统一叫 `gpt-image`，背后跟着 OpenAI 当前提供的版本，换代时你不用改任何配置。旧名 `gpt-image-2` 已于 2026-11-09 下线；MCP 收到旧名会自动换成 `gpt-image` 再发出。
 
 > **关于尺寸**：`size` 不决定输出像素。本站实测输出约 157 万像素，与请求的尺寸无关：请求 3840x2160、2048x1152、1536x1024 都返回 1254×1254。想要横图或竖图，把画幅写进 prompt，例如写「16:9 宽幅横构图」得到 1672×941。实际尺寸一律以返回的 `saved.actual_size` 为准，不要向用户承诺 2K/4K。
 
@@ -150,7 +150,7 @@ Key 不会写进 Claude Code、Codex 或 Desktop 的配置文件，而是保存�
 |---|---|---|
 | `TWGGA_API_KEY` | 空 | 设置后优先于系统凭据库 |
 | `TWGGA_BASEURL` | `https://twgga.work` | 接口地址，启动后不可通过工具参数修改 |
-| `TWGGA_MODEL` | `gpt-image-2` | 默认模型 |
+| `TWGGA_MODEL` | `gpt-image` | 默认模型 |
 | `TWGGA_SAVE_DIR` | `~/Pictures/twgga-out` | 默认输出目录 |
 | `TWGGA_SAVE_DIR_ROOT` | 同输出目录 | 输出安全根目录；会话记录保存在它下面的 `.twgga-sessions` |
 | `TWGGA_INPUT_ROOT` | 空（不限制） | 可选的输入图片白名单根目录 |
@@ -191,4 +191,4 @@ cargo xtask smoke
 
 离线测试全部使用本地 HTTP 替身，不读取个人 Key，不产生图片费用。付费在线验收需要显式开关，见 [Rust 开发与验收](docs/rust-only-development.md)。
 
-本项目跟随开源项目 [micu-image-mcp](https://github.com/Subaru486desuwa/micu-image-mcp)（MIT）同步，在其之上保留本站的差异：只有 `gpt-image-2` 一个模型，不按尺寸切换线路。
+本项目跟随开源项目 [micu-image-mcp](https://github.com/Subaru486desuwa/micu-image-mcp)（MIT）同步，在其之上保留本站的差异：只有 `gpt-image` 一个模型，不按尺寸切换线路。

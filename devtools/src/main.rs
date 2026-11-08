@@ -85,7 +85,7 @@ enum Task {
     QualityMatrix {
         #[arg(long,default_value_os_t=default_binary())]
         binary: PathBuf,
-        #[arg(long, value_delimiter = ',', default_value = "gpt-image-2")]
+        #[arg(long, value_delimiter = ',', default_value = "gpt-image")]
         models: Vec<String>,
         #[arg(long, value_delimiter = ',', default_value = "1024x1024")]
         sizes: Vec<String>,

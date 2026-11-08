@@ -40,7 +40,7 @@ fn matrix_plan_is_offline_and_paid_modes_require_explicit_switches() {
     // 一个模型 × 一个尺寸 × 两个工具 × 五档 quality（省略、auto、low、medium、high）。
     assert_eq!(value["cases"].as_array().unwrap().len(), 10);
     assert_eq!(value["paid_requests"], 0);
-    assert_eq!(value["cases"][0]["model"], "gpt-image-2");
+    assert_eq!(value["cases"][0]["model"], "gpt-image");
     // 上游目录里的其他模型在本站没有渠道，矩阵拒绝替它们排付费用例。
     for model in ["gpt-image-2-openai", "gpt-image-2.6-flare"] {
         let plan = Command::new(binary)

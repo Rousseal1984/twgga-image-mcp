@@ -99,7 +99,7 @@ impl Relay {
                     event["response_format_present"] = json!(response_format_present);
                     if let Ok(value) = serde_json::from_slice::<Value>(&bytes)
                         && let Some(model) = value["model"].as_str()
-                        && model.starts_with("gpt-image-2")
+                        && model.starts_with("gpt-image")
                         && model.len() <= 200
                         && model
                             .bytes()
@@ -217,9 +217,9 @@ pub fn quality_matrix(models: &[String], sizes: &[String]) -> Result<Vec<Value>>
     let mut cases = Vec::new();
     for model in models {
         let model = model.as_str();
-        // 本站只有 gpt-image-2 一条线路；上游目录里的其他模型在这里没有渠道，
+        // 本站只有 gpt-image 一条线路；上游目录里的其他模型在这里没有渠道，
         // 付费矩阵不该替它们排用例。
-        if model != "gpt-image-2" {
+        if model != "gpt-image" {
             return Err("unknown matrix model".into());
         }
         for size in sizes {
@@ -428,8 +428,8 @@ pub fn stress(binary: &Path, highres: bool, output: &Path) -> Result<Value> {
         .as_str()
         .unwrap_or("https://twgga.work");
     let models = image_models(origin, key)?;
-    // 不按尺寸切模型：本站 ≥2K 也走 gpt-image-2。
-    let model = "gpt-image-2";
+    // 不按尺寸切模型：本站 ≥2K 也走 gpt-image。
+    let model = "gpt-image";
     if !models.contains(model) {
         return Err("required stress image model is not available; no image requests sent".into());
     }
@@ -463,7 +463,7 @@ pub fn stress(binary: &Path, highres: bool, output: &Path) -> Result<Value> {
                 server.initialize()?;let info=server.call("server_info",json!({}))?;
                 ready.fetch_add(1,std::sync::atomic::Ordering::SeqCst);
                 while ready.load(std::sync::atomic::Ordering::SeqCst)<count {if Instant::now()>deadline {return Err("live stress process readiness timed out".into());}std::thread::sleep(Duration::from_millis(10));}
-                let mut args=json!({"prompt":"A centered cobalt blue ceramic cup on a red table, plain white background, no text or logo.","model":"gpt-image-2","size":size,"n":if highres {3} else {5},"basename":format!("stress_{index}")});
+                let mut args=json!({"prompt":"A centered cobalt blue ceramic cup on a red table, plain white background, no text or logo.","model":"gpt-image","size":size,"n":if highres {3} else {5},"basename":format!("stress_{index}")});
                 if highres {args["quality"]=json!("high");}
                 let began=Instant::now();let result=server.call("image_generate",args)?;
                 let saved=result["saved"].as_array().ok_or("stress saved list missing")?;
@@ -476,7 +476,7 @@ pub fn stress(binary: &Path, highres: bool, output: &Path) -> Result<Value> {
                     if highres && format!("{}x{}",image.width(),image.height())!=*size {return Err("live high-resolution output did not honor pixels".into());}
                     artifacts.push(json!({"path":path,"width":image.width(),"height":image.height()}));
                 }
-                let valid=result["ok"]==true && result["requested_n"]==expected && saved.len()==expected && result["errors"].as_array().is_some_and(Vec::is_empty) && (!highres || (result["model"]=="gpt-image-2" && result["notes"].to_string().contains("强制 N=1")));
+                let valid=result["ok"]==true && result["requested_n"]==expected && saved.len()==expected && result["errors"].as_array().is_some_and(Vec::is_empty) && (!highres || (result["model"]=="gpt-image" && result["notes"].to_string().contains("强制 N=1")));
                 if !valid {return Err("live stress result did not satisfy the current public contract".into());}
                 Ok(json!({"size":size,"saved":artifacts,"server_version":info["version"],"cross_process_lock":info["retry_policy"]["concurrency_2k_4k"],"lock_waited":result["notes"].to_string().contains("等待跨进程"),"wall_seconds":began.elapsed().as_secs_f64(),"stdout_frames":server.frames,"passed":true}))
             })

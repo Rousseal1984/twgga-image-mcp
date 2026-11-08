@@ -37,7 +37,7 @@
   <g font-family="'SFMono-Regular', Consolas, 'Liberation Mono', monospace" font-size="13" font-weight="600">
     <rect x="200" y="146" width="132" height="30" rx="9" fill="#141414" stroke="#ffffff" stroke-opacity="0.28"/>
     <circle cx="217" cy="161" r="4" fill="#ffffff"/>
-    <text x="228" y="166" fill="#e8e8e8">gpt-image-2</text>
+    <text x="228" y="166" fill="#e8e8e8">gpt-image</text>
 
     <rect x="342" y="146" width="132" height="30" rx="9" fill="#141414" stroke="#ffffff" stroke-opacity="0.28"/>
     <circle cx="359" cy="161" r="4" fill="#ffffff"/>

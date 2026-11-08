@@ -15,7 +15,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "collision [scenario:b64]",
           "response_format": "url",
@@ -36,7 +36,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "collision [scenario:b64]",
           "response_format": "url",
@@ -56,14 +56,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\same_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\same_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -90,14 +90,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\same_1_2.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\same_1_2.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -153,7 +153,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量串行 [scenario:b64]",
           "response_format": "url",
           "size": "2048x1152"
@@ -181,7 +181,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量串行 [scenario:b64]",
           "response_format": "url",
           "size": "2048x1152"
@@ -206,7 +206,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"2048x1152\",\n  \"concurrency\": 1,\n  \"total\": 2,\n  \"succeeded\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    }\n  ],\n  \"notes\": [\n    \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"2048x1152\",\n  \"concurrency\": 1,\n  \"total\": 2,\n  \"succeeded\": 2,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"2048x1152\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\",\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    }\n  ],\n  \"notes\": [\n    \"size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\"\n  ]\n}",
               "type": "text"
             }
           ],
@@ -214,7 +214,7 @@
           "structuredContent": {
             "concurrency": 1,
             "failed": 0,
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size"
             ],
@@ -223,7 +223,7 @@
               {
                 "index": 1,
                 "input": "<CASE_ROOT>\\input/batch-0.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size",
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
@@ -241,7 +241,7 @@
               {
                 "index": 2,
                 "input": "<CASE_ROOT>\\input/batch-1.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "size=2048x1152 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size",
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 2048×1152 (2.36MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
@@ -297,7 +297,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -324,7 +324,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -351,7 +351,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -378,7 +378,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -405,7 +405,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -432,7 +432,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "批量并发 [scenario:concurrency_probe]",
           "response_format": "url",
           "size": "1024x1024"
@@ -457,7 +457,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"concurrency\": 5,\n  \"total\": 6,\n  \"succeeded\": 6,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_3.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 3,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-2.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_4.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 4,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-3.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_5.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 5,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-4.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image-2\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_6.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 6,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-5.png\"\n    }\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"concurrency\": 5,\n  \"total\": 6,\n  \"succeeded\": 6,\n  \"failed\": 0,\n  \"results\": [\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_1.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 1,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-0.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_2.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 2,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-1.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_3.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 3,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-2.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_4.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 4,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-3.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_5.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 5,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-4.png\"\n    },\n    {\n      \"ok\": true,\n      \"model\": \"gpt-image\",\n      \"size\": \"1024x1024\",\n      \"used_fallback\": false,\n      \"saved\": {\n        \"path\": \"<CASE_ROOT>\\\\out\\\\batch_<TIMESTAMP>_6.png\",\n        \"size_bytes\": 93,\n        \"actual_size\": \"32x24\",\n        \"actual_megapixels\": 0.0\n      },\n      \"notes\": [\n        \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n      ],\n      \"index\": 6,\n      \"input\": \"<CASE_ROOT>\\\\input/batch-5.png\"\n    }\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -465,14 +465,14 @@
           "structuredContent": {
             "concurrency": 5,
             "failed": 0,
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": true,
             "results": [
               {
                 "index": 1,
                 "input": "<CASE_ROOT>\\input/batch-0.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -489,7 +489,7 @@
               {
                 "index": 2,
                 "input": "<CASE_ROOT>\\input/batch-1.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -506,7 +506,7 @@
               {
                 "index": 3,
                 "input": "<CASE_ROOT>\\input/batch-2.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -523,7 +523,7 @@
               {
                 "index": 4,
                 "input": "<CASE_ROOT>\\input/batch-3.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -540,7 +540,7 @@
               {
                 "index": 5,
                 "input": "<CASE_ROOT>\\input/batch-4.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -557,7 +557,7 @@
               {
                 "index": 6,
                 "input": "<CASE_ROOT>\\input/batch-5.png",
-                "model": "gpt-image-2",
+                "model": "gpt-image",
                 "notes": [
                   "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
                 ],
@@ -871,7 +871,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "编辑中文 [scenario:b64]",
           "response_format": "url",
           "size": "1024x1024"
@@ -903,13 +903,13 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"used_fallback\": false,\n  \"saved\": {\n    \"path\": \"<CASE_ROOT>\\\\out\\\\edit_contract.png\",\n    \"size_bytes\": 93,\n    \"actual_size\": \"32x24\",\n    \"actual_megapixels\": 0.0\n  },\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"used_fallback\": false,\n  \"saved\": {\n    \"path\": \"<CASE_ROOT>\\\\out\\\\edit_contract.png\",\n    \"size_bytes\": 93,\n    \"actual_size\": \"32x24\",\n    \"actual_megapixels\": 0.0\n  },\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -987,7 +987,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "retry [scenario:retry_400_too_many]",
           "response_format": "url",
@@ -1007,7 +1007,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 400: Too Many Requests\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 400: Too Many Requests\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1016,7 +1016,7 @@
             "errors": [
               "#1 HTTP 400: Too Many Requests"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1049,7 +1049,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "retry [scenario:retry_408]",
           "response_format": "url",
@@ -1069,7 +1069,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 408: fixture HTTP 408\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 408: fixture HTTP 408\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1078,7 +1078,7 @@
             "errors": [
               "#1 HTTP 408: fixture HTTP 408"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1111,7 +1111,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "retry [scenario:retry_after_seconds]",
           "response_format": "url",
@@ -1131,7 +1131,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 429: fixture HTTP 429\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 429: fixture HTTP 429\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1140,7 +1140,7 @@
             "errors": [
               "#1 HTTP 429: fixture HTTP 429"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1173,7 +1173,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "retry [scenario:retry_500]",
           "response_format": "url",
@@ -1193,7 +1193,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 500: fixture HTTP 500\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 500: fixture HTTP 500\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1202,7 +1202,7 @@
             "errors": [
               "#1 HTTP 500: fixture HTTP 500"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1235,7 +1235,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "timeout [scenario:http_524]",
           "response_format": "url",
@@ -1255,7 +1255,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"2048x2048\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 524: fixture timeout\"\n  ],\n  \"notes\": [\n    \"size=2048x2048 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\"\n  ]\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"2048x2048\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 524: fixture timeout\"\n  ],\n  \"notes\": [\n    \"size=2048x2048 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size\"\n  ]\n}",
               "type": "text"
             }
           ],
@@ -1264,7 +1264,7 @@
             "errors": [
               "#1 HTTP 524: fixture timeout"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "size=2048x2048 (2k) 会照常请求，但本站线路不保证精确像素，请核对 saved.actual_size"
             ],
@@ -1299,7 +1299,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "timeout [scenario:api_timeout]",
           "response_format": "url",
@@ -1320,7 +1320,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "timeout [scenario:api_timeout]",
           "response_format": "url",
@@ -1340,7 +1340,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 0: ReadTimeout: \"\n  ],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：ReadTimeout: \"\n  ]\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 0: ReadTimeout: \"\n  ],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：ReadTimeout: \"\n  ]\n}",
               "type": "text"
             }
           ],
@@ -1349,7 +1349,7 @@
             "errors": [
               "#1 HTTP 0: ReadTimeout: "
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：ReadTimeout: "
             ],
@@ -1384,7 +1384,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "oversize [scenario:content_length_too_large]",
           "response_format": "url",
@@ -1404,7 +1404,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 413: 响应 Content-Length=25.0MB 超过 25MB 上限\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 413: 响应 Content-Length=25.0MB 超过 25MB 上限\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1413,7 +1413,7 @@
             "errors": [
               "#1 HTTP 413: 响应 Content-Length=25.0MB 超过 25MB 上限"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1446,7 +1446,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "data URL [scenario:data_url]",
           "response_format": "url",
@@ -1466,14 +1466,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\data_url_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\data_url_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -1522,7 +1522,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "secret [scenario:secret_error]",
           "response_format": "url",
@@ -1542,7 +1542,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 400: Authorization: Bearer [REDACTED]]; [REDACTED_BASE64]\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 400: Authorization: Bearer [REDACTED]]; [REDACTED_BASE64]\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -1551,7 +1551,7 @@
             "errors": [
               "#1 HTTP 400: Authorization: Bearer [REDACTED]]; [REDACTED_BASE64]"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -1584,7 +1584,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "精确尺寸 [scenario:exact_b64]",
           "response_format": "url",
@@ -1604,14 +1604,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": true,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\exact_1.png\",\n      \"size_bytes\": 4555,\n      \"actual_size\": \"1024x1024\",\n      \"actual_megapixels\": 1.05\n    }\n  ],\n  \"errors\": [],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": true,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\exact_1.png\",\n      \"size_bytes\": 4555,\n      \"actual_size\": \"1024x1024\",\n      \"actual_megapixels\": 1.05\n    }\n  ],\n  \"errors\": [],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": true,
             "requested_n": 1,
@@ -1658,7 +1658,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "invalid [scenario:invalid_json]",
           "response_format": "url",
@@ -1679,7 +1679,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "invalid [scenario:invalid_json]",
           "response_format": "b64_json",
@@ -1699,7 +1699,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 响应中未识别到图片\"\n  ],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json\"\n  ]\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 响应中未识别到图片\"\n  ],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json\"\n  ]\n}",
               "type": "text"
             }
           ],
@@ -1708,7 +1708,7 @@
             "errors": [
               "#1 保存失败: 响应中未识别到图片"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json"
             ],
@@ -1743,7 +1743,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "disconnect [scenario:disconnect_body_once]",
           "response_format": "url",
@@ -1764,7 +1764,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "disconnect [scenario:disconnect_body_once]",
           "response_format": "url",
@@ -1784,14 +1784,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\disconnect_body_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: peer closed connection without sending complete message body (received 1 bytes, expected 1000)\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\disconnect_body_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: peer closed connection without sending complete message body (received 1 bytes, expected 1000)\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: peer closed connection without sending complete message body (received 1 bytes, expected 1000)",
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
@@ -1841,7 +1841,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "empty [scenario:no_image]",
           "response_format": "url",
@@ -1862,7 +1862,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "empty [scenario:no_image]",
           "response_format": "b64_json",
@@ -1882,7 +1882,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 响应中未识别到图片\"\n  ],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json\"\n  ]\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 响应中未识别到图片\"\n  ],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json\"\n  ]\n}",
               "type": "text"
             }
           ],
@@ -1891,7 +1891,7 @@
             "errors": [
               "#1 保存失败: 响应中未识别到图片"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "URL 落盘失败（#1 保存失败: 响应中未识别到图片）→ 重试 API response_format=b64_json"
             ],
@@ -1926,7 +1926,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "disconnect [scenario:disconnect_once]",
           "response_format": "url",
@@ -1947,7 +1947,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "disconnect [scenario:disconnect_once]",
           "response_format": "url",
@@ -1967,14 +1967,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\disconnect_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: Server disconnected without sending a response.\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\disconnect_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: Server disconnected without sending a response.\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "HTTP 0 可重试，等待 2.0s 后第 2 次尝试；原因：RemoteProtocolError: Server disconnected without sending a response.",
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
@@ -2024,7 +2024,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "redirect [scenario:url_redirect_private_then_b64]",
           "response_format": "url",
@@ -2060,7 +2060,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "redirect [scenario:url_redirect_private_then_b64]",
           "response_format": "b64_json",
@@ -2080,14 +2080,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\redirect_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: Redirect response '302 Found' for url 'http://<PUBLIC_DOWNLOAD>/redirect-private.png'\\nRedirect location: 'http://127.0.0.1/private.png'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302）→ 重试 API response_format=b64_json\",\n    \"已通过 response_format=b64_json 成功落盘\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\redirect_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: Redirect response '302 Found' for url 'http://<PUBLIC_DOWNLOAD>/redirect-private.png'\\nRedirect location: 'http://127.0.0.1/private.png'\\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302）→ 重试 API response_format=b64_json\",\n    \"已通过 response_format=b64_json 成功落盘\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "URL 落盘失败（#1 保存失败: Redirect response '302 Found' for url 'http://<PUBLIC_DOWNLOAD>/redirect-private.png'\nRedirect location: 'http://127.0.0.1/private.png'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/302）→ 重试 API response_format=b64_json",
               "已通过 response_format=b64_json 成功落盘",
@@ -2138,7 +2138,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "retry [scenario:retry_after_http_date]",
           "response_format": "url",
@@ -2158,7 +2158,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 429: fixture HTTP 429\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 429: fixture HTTP 429\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -2167,7 +2167,7 @@
             "errors": [
               "#1 HTTP 429: fixture HTTP 429"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -2234,7 +2234,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "ssrf [scenario:url_loopback]",
           "response_format": "url",
@@ -2254,7 +2254,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 下载 URL host '127.0.0.1' 指向受限地址 127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 下载 URL host '127.0.0.1' 指向受限地址 127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -2263,7 +2263,7 @@
             "errors": [
               "#1 保存失败: 下载 URL host '127.0.0.1' 指向受限地址 127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -2296,7 +2296,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "ssrf [scenario:url_mapped_loopback]",
           "response_format": "url",
@@ -2316,7 +2316,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 下载 URL host '::ffff:127.0.0.1' 指向受限地址 ::ffff:127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 保存失败: 下载 URL host '::ffff:127.0.0.1' 指向受限地址 ::ffff:127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -2325,7 +2325,7 @@
             "errors": [
               "#1 保存失败: 下载 URL host '::ffff:127.0.0.1' 指向受限地址 ::ffff:127.0.0.1（私网/环回/链路本地/保留），已拒绝（SSRF 防护）"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -2357,7 +2357,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2377,7 +2377,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2397,7 +2397,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2417,7 +2417,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2437,7 +2437,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2457,7 +2457,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "并发 [scenario:concurrency_probe]",
           "response_format": "url",
@@ -2477,14 +2477,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 6,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 2,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_2.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 3,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_3.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 4,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_4.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 5,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_5.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 6,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_6.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"1K + 标准线路 + N=6 已 5 并发\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 6,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 2,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_2.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 3,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_3.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 4,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_4.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 5,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_5.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    },\n    {\n      \"index\": 6,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\generate_concurrent_6.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"1K + 标准线路 + N=6 已 5 并发\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "1K + 标准线路 + N=6 已 5 并发",
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
@@ -2594,7 +2594,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "oversize [scenario:stream_too_large]",
           "response_format": "url",
@@ -2614,7 +2614,7 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 413: 响应体超过 25MB 上限，已中断\"\n  ],\n  \"notes\": []\n}",
+              "text": "{\n  \"ok\": false,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [],\n  \"errors\": [\n    \"#1 HTTP 413: 响应体超过 25MB 上限，已中断\"\n  ],\n  \"notes\": []\n}",
               "type": "text"
             }
           ],
@@ -2623,7 +2623,7 @@
             "errors": [
               "#1 HTTP 413: 响应体超过 25MB 上限，已中断"
             ],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [],
             "ok": false,
             "requested_n": 1,
@@ -2656,7 +2656,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "truncated [scenario:url_truncated_then_b64]",
           "response_format": "url",
@@ -2692,7 +2692,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "truncated [scenario:url_truncated_then_b64]",
           "response_format": "b64_json",
@@ -2712,14 +2712,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\truncated_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 远端图 http://<PUBLIC_DOWNLOAD>/truncated.png 无法完整解码（文件可能截断、损坏或格式标记错误））→ 重试 API response_format=b64_json\",\n    \"已通过 response_format=b64_json 成功落盘\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\truncated_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"URL 落盘失败（#1 保存失败: 远端图 http://<PUBLIC_DOWNLOAD>/truncated.png 无法完整解码（文件可能截断、损坏或格式标记错误））→ 重试 API response_format=b64_json\",\n    \"已通过 response_format=b64_json 成功落盘\",\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "URL 落盘失败（#1 保存失败: 远端图 http://<PUBLIC_DOWNLOAD>/truncated.png 无法完整解码（文件可能截断、损坏或格式标记错误））→ 重试 API response_format=b64_json",
               "已通过 response_format=b64_json 成功落盘",
@@ -2770,7 +2770,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "URL [scenario:url_success]",
           "response_format": "url",
@@ -2805,14 +2805,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\url_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\url_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -2861,7 +2861,7 @@
           "content_type": "application/json"
         },
         "json": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "n": 1,
           "prompt": "URL stream [scenario:url_no_content_length]",
           "response_format": "url",
@@ -2896,14 +2896,14 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\url_stream_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"requested_n\": 1,\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"saved\": [\n    {\n      \"index\": 1,\n      \"path\": \"<CASE_ROOT>\\\\out\\\\url_stream_1.png\",\n      \"size_bytes\": 93,\n      \"actual_size\": \"32x24\",\n      \"actual_megapixels\": 0.0\n    }\n  ],\n  \"errors\": [],\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
             "errors": [],
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"
             ],
@@ -2954,7 +2954,7 @@
         "json": null,
         "method": "POST",
         "multipart_fields": {
-          "model": "gpt-image-2",
+          "model": "gpt-image",
           "prompt": "Reference images are provided. Synthesize their visual elements (style, palette, composition, subjects) into ONE single new image per the instruction below. Do NOT collage, tile, or montage the references side-by-side unless explicitly asked.\n\nInstruction:\n融合中文 [scenario:b64]",
           "response_format": "url",
           "size": "1024x1024"
@@ -2986,13 +2986,13 @@
         "result": {
           "content": [
             {
-              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image-2\",\n  \"size\": \"1024x1024\",\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"n_references\": 2,\n  \"saved\": {\n    \"path\": \"<CASE_ROOT>\\\\out\\\\multi_contract.png\",\n    \"size_bytes\": 93,\n    \"actual_size\": \"32x24\",\n    \"actual_megapixels\": 0.0\n  },\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
+              "text": "{\n  \"ok\": true,\n  \"model\": \"gpt-image\",\n  \"size\": \"1024x1024\",\n  \"used_fallback\": false,\n  \"size_honored\": false,\n  \"n_references\": 2,\n  \"saved\": {\n    \"path\": \"<CASE_ROOT>\\\\out\\\\multi_contract.png\",\n    \"size_bytes\": 93,\n    \"actual_size\": \"32x24\",\n    \"actual_megapixels\": 0.0\n  },\n  \"notes\": [\n    \"⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。\"\n  ]\n}",
               "type": "text"
             }
           ],
           "isError": false,
           "structuredContent": {
-            "model": "gpt-image-2",
+            "model": "gpt-image",
             "n_references": 2,
             "notes": [
               "⚠ 实际 32×24 (0.00MP) ≠ 请求 1024×1024 (1.05MP)。本站生图不保证精确像素，size 只是建议，请以 saved.actual_size 为准；需要精确构图时把画幅要求写进 prompt。"

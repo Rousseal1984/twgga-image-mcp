@@ -16,7 +16,9 @@
 
 生成的图片会**自动保存到本地磁盘**，返回结果中包含文件的绝对路径，方便你在 IDE 或文件管理器中打开。
 
-当前仅支持 `gpt-image-2`。从 v0.5.0 起支持**连续编辑**：同一张图可以接着改，MCP 记住每一版图片和已经提过的要求，见 [4.6](#46-连续编辑session_id)。
+模型名不带版本号：本站生图统一叫 `gpt-image`，背后跟着 OpenAI 当前提供的版本，换代时你不用改任何配置。旧名 `gpt-image-2` 已于 2026-11-09 下线；MCP 收到旧名会自动换成 `gpt-image` 再发出。
+
+当前仅支持 `gpt-image`。从 v0.5.0 起支持**连续编辑**：同一张图可以接着改，MCP 记住每一版图片和已经提过的要求，见 [4.6](#46-连续编辑session_id)。
 
 > **先说清一件事**：`size` 不决定输出像素。本站实测输出约 157 万像素，与请求的尺寸无关：请求 3840x2160、2048x1152、1536x1024 都返回 1254×1254。想要横图或竖图，把画幅写进 prompt，例如「16:9 宽幅横构图」得到 1672×941、「9:16 竖幅海报」得到 941×1672。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，请以它们为准，不要向用户承诺 2K/4K。
 
@@ -40,7 +42,7 @@ curl -fsSL https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/s
 
 脚本会下载最新版程序、核对 `SHA256SUMS`，再运行程序自带的 `install --yes`：把程序复制到固定位置，写入 Claude Code（`~/.claude.json`）和 Codex（`~/.codex/config.toml`）的 `twgga-image` 配置。不需要 Python。
 
-首次安装时如果还没保存过 Key，终端会提示输入一次，输入内容不显示。Key 需以 `sk-` 开头，并且能调用 `gpt-image-2`。
+首次安装时如果还没保存过 Key，终端会提示输入一次，输入内容不显示。Key 需以 `sk-` 开头，并且能调用 `gpt-image`。
 
 ### 2.2 API Key 保存在哪
 
@@ -92,7 +94,7 @@ Claude Desktop 的 Code 模式读的是 `~/.claude.json`，安装器已经写好
 |------|--------|------|
 | `TWGGA_API_KEY` | 空 | 设置后优先于系统凭据库；一般不需要设置 |
 | `TWGGA_BASEURL` | `https://twgga.work` | TWGGA API 地址 |
-| `TWGGA_MODEL` | `gpt-image-2` | 默认模型 |
+| `TWGGA_MODEL` | `gpt-image` | 默认模型 |
 | `TWGGA_SAVE_DIR` | `~/Pictures/twgga-out` | 默认输出目录 |
 | `TWGGA_SAVE_DIR_ROOT` | 同 `TWGGA_SAVE_DIR` | 安全根目录，所有输出与会话记录都在其下 |
 | `TWGGA_USE_SHELL_PROXY` | `0` | 设为 `1` 才读取系统 shell 代理 |
@@ -109,7 +111,7 @@ Claude Desktop 的 Code 模式读的是 `~/.claude.json`，安装器已经写好
 
 | 检查项 | 状态 | 说明 |
 |--------|------|------|
-| `/v1/models` | ✅ 正常 | 当前 Key 可见 `gpt-image-2` |
+| `/v1/models` | ✅ 正常 | 当前 Key 可见 `gpt-image` |
 | MCP 握手 | ✅ 正常 | `initialize` + `tools/list` 返回 5 个工具 |
 | `image_generate` | ✅ 已验证 | 出图正常；实际像素见 `saved.actual_size` |
 | `image_edit` | ✅ 已验证 | 单图参考 1024²、2048×1152、3840×2160 可用 |
@@ -136,7 +138,7 @@ Claude Desktop 的 Code 模式读的是 `~/.claude.json`，安装器已经写好
 ```json
 {
   "ok": true,
-  "model": "gpt-image-2",
+  "model": "gpt-image",
   "size": "1024x1024",
   "saved": [
     {
@@ -245,7 +247,7 @@ flowchart TD
 | `prompt` | string | ✅ | 图像描述，1–2000 字符 |
 | `size` | string \| null | | `"WxH"` 格式，如 `"1024x1024"`；留空则从 prompt 关键字自动推断 |
 | `n` | int | | 生成张数 1–10；1K 可多张并发，≥2K 强制 n=1 |
-| `model` | string \| null | | 只接受 `gpt-image-2`；留空即用它 |
+| `model` | string \| null | | 只接受 `gpt-image`；留空即用它 |
 | `quality` | string \| null | | `auto` / `low` / `medium` / `high`；留空使用后端默认值 |
 | `output_format` | string \| null | | `png` / `jpeg` / `webp`；留空不发送，实际格式见 `saved[].format` |
 | `session_id` | string \| null | | 传 `"new"` 开启连续编辑会话（要求 `n=1`），见 4.6 |
@@ -266,7 +268,7 @@ flowchart TD
 
 **Prompt 写法建议**：
 
-- 中英文均可；gpt-image-2 文字渲染能力强，可直接在 prompt 中写要显示的文字
+- 中英文均可；gpt-image 文字渲染能力强，可直接在 prompt 中写要显示的文字
 - 越具体越好：风格、视角、光线、主体、细节程度
 - 例：`"极简风格寿司吉祥物 logo，柔和粉彩配色，白色背景，居中构图"`
 
@@ -313,7 +315,7 @@ image_generate(
 | `image_path` | string | 见说明 | 输入图路径（绝对或相对），支持 PNG/JPG/WebP；单次编辑或新会话必填，已有会话可省略 |
 | `mask_path` | string \| null | | 可选 alpha mask PNG；透明区域 = 编辑区，不透明 = 保留；只作用于本轮 |
 | `size` | string | | 输出尺寸，默认 `1024x1024`；已有会话省略时继承 |
-| `model` | string \| null | | 只接受 `gpt-image-2` |
+| `model` | string \| null | | 只接受 `gpt-image` |
 | `quality` | string \| null | | `auto` / `low` / `medium` / `high`；已有会话省略时继承 |
 | `output_format` | string \| null | | `png` / `jpeg` / `webp` |
 | `session_id` | string \| null | | `"new"` 开新会话；传返回的 `session.id` 接着改，见 4.6 |
@@ -387,7 +389,7 @@ image_edit(
 
 **并发策略**：
 
-- `gpt-image-2`：5 并发
+- `gpt-image`：5 并发
 - ≥2K 批次：串行 + 1.5s 间隔，避免把并发打满
 - 单张失败不影响其他张
 
@@ -592,8 +594,8 @@ MCP 内置多项安全限制：
 | 错误信息 | 原因 | 解决方案 |
 |----------|------|----------|
 | `未配置 API key` / 提示运行 `credentials` | 系统凭据库和环境变量里都没有 Key | 重新运行 2.1 的一行命令，或运行 `twgga-image-mcp credentials set` |
-| `……下模型 gpt-image-2 无可用渠道` | Key 所在分组不含生图 | 在控制台把 Key 的分组改为包含 gpt-image-2 的分组 |
-| `不支持 model=…` | 传了本站没有的模型名 | 去掉 `model` 参数或改为 `gpt-image-2` |
+| `……下模型 gpt-image 无可用渠道` | Key 所在分组不含生图 | 在控制台把 Key 的分组改为包含 gpt-image 的分组 |
+| `不支持 model=…` | 传了本站没有的模型名 | 去掉 `model` 参数或改为 `gpt-image` |
 | `output_format 不支持 'gif'` | 本站不提供动图 | 改用 `png` / `jpeg` / `webp` |
 | `该编辑会话正在处理另一轮请求` | 同一会话的上一次调用还没结束 | 等它完成后再试 |
 | `size W/H 必须是 16 的倍数` | 尺寸不符合约束 | 改为如 `1024x1024`、`2048x1152` |

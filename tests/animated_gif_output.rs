@@ -16,7 +16,7 @@ use twgga_devtools::{
     stdio::Session,
 };
 
-// 本站只有 gpt-image-2，不开放 GIF 请求（上游 micu 的 GIF 只在 gpt-image-2.6 上有）。
+// 本站只有 gpt-image，不开放 GIF 请求（上游 micu 的 GIF 只在 gpt-image-2.6 上有）。
 // 但服务端若真回了一个 GIF，逐帧校验与解压炸弹防护照样要生效，这些测试守的是那一层。
 const FRAMES: usize = 3;
 /// 上游 micu 会在尺寸不符时建议改用这条精确像素线路；本站没有它，任何提示都不能提到。
@@ -251,7 +251,7 @@ fn gif_requests_and_absent_models_fail_locally_before_any_billable_post() -> Res
             json!({"prompt":"x","model":model,"output_format":"gif"}),
         )?;
         assert_eq!(result["ok"], false, "{result}");
-        assert!(result.to_string().contains("gpt-image-2"), "{result}");
+        assert!(result.to_string().contains("gpt-image"), "{result}");
     }
     assert!(fields.lock().unwrap().is_empty());
     Ok(())

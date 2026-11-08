@@ -263,9 +263,9 @@ mod tests {
             .server_info()
             .unwrap_or_else(|error| panic!("{error}"));
         assert_eq!(info["version"], env!("CARGO_PKG_VERSION"));
-        assert_eq!(info["available_models"], serde_json::json!(["gpt-image-2"]));
-        assert_eq!(info["default_models"]["image_generate"], "gpt-image-2");
-        assert_eq!(info["default_models"]["image_edit"], "gpt-image-2");
+        assert_eq!(info["available_models"], serde_json::json!(["gpt-image"]));
+        assert_eq!(info["default_models"]["image_generate"], "gpt-image");
+        assert_eq!(info["default_models"]["image_edit"], "gpt-image");
         assert!(info.get("grok_channel_enabled").is_none());
         assert_eq!(info["api_key_configured"], true);
         assert!(info["retry_policy"]["concurrency_2k_4k"].as_str().is_some_and(|text| text.contains("tokio::sync::Semaphore") && text.contains("fs4")));

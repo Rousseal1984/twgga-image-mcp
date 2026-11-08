@@ -26,7 +26,7 @@ fn generation_sends_utf8_and_current_model_without_an_omitted_quality_field() ->
     assert_eq!(requests[0].path, "/v1/images/generations");
     assert!(requests[0].authorization_valid);
     assert_eq!(requests[0].fields["prompt"], "中文小猫 café");
-    assert_eq!(requests[0].fields["model"], "gpt-image-2");
+    assert_eq!(requests[0].fields["model"], "gpt-image");
     assert!(requests[0].fields.get("quality").is_none());
     assert!(Path::new(result["saved"][0]["path"].as_str().unwrap()).is_file());
     Ok(())
@@ -43,7 +43,7 @@ fn current_models_qualities_sizes_and_large_routing_are_verified_on_the_wire() -
     )?;
     server.initialize()?;
     {
-        let model = "gpt-image-2";
+        let model = "gpt-image";
         for quality in [
             None,
             Some("auto"),
@@ -77,7 +77,7 @@ fn current_models_qualities_sizes_and_large_routing_are_verified_on_the_wire() -
     ] {
         // 本站只有一条线路：≥2K 不切模型，只强制 n=1。
         {
-            let model = "gpt-image-2";
+            let model = "gpt-image";
             let result = server.call(
                 "image_generate",
                 json!({"prompt":"route","model":model,"size":size,"n":3}),
@@ -116,7 +116,7 @@ fn unsupported_models_and_invalid_parameters_never_reach_http() -> Result<()> {
     for model in [
         "gpt-image-2-pro",
         "gpt-image-2-key",
-        " gpt-image-2 ",
+        " gpt-image ",
         "dall-e-3",
         "grok-imagine-image",
     ] {
@@ -176,7 +176,7 @@ fn data_urls_downloads_and_auto_fallback_preserve_security_and_saved_results() -
         server.initialize()?;
         let result = server.call(
             "image_generate",
-            json!({"prompt":format!("[scenario:{scenario}] save"),"size":"1024x1024","model":"gpt-image-2"}),
+            json!({"prompt":format!("[scenario:{scenario}] save"),"size":"1024x1024","model":"gpt-image"}),
         )?;
         assert_eq!(result["ok"], true, "scenario {scenario}: {result}");
         let path = Path::new(result["saved"][0]["path"].as_str().unwrap());
@@ -250,7 +250,7 @@ fn retries_errors_and_response_limits_are_verified_at_the_http_boundary() -> Res
             &api.env(),
         )?;
         server.initialize()?;
-        // gpt-image-2 的 1K 请求在 MCP 侧不重试 HTTP 错误，只有网络层断开（status=0）
+        // gpt-image 的 1K 请求在 MCP 侧不重试 HTTP 错误，只有网络层断开（status=0）
         // 有 1 次免费重试；≥2K 的退避间隔是 60s，由 http::retry 的单元测试覆盖。
         let success = scenario.starts_with("disconnect_");
         let size = if scenario == "http_524" {
@@ -258,7 +258,7 @@ fn retries_errors_and_response_limits_are_verified_at_the_http_boundary() -> Res
         } else {
             "1024x1024"
         };
-        let model = "gpt-image-2";
+        let model = "gpt-image";
         let result = server.call(
             "image_generate",
             json!({"prompt":format!("[scenario:{scenario}] boundary"),"size":size,"model":model}),
@@ -279,7 +279,7 @@ fn retries_errors_and_response_limits_are_verified_at_the_http_boundary() -> Res
                 api.http.errors()
             );
         }
-        // 2xx 却解析不出图片时，gpt-image-2 会改要 b64_json 再请求一次（response_format 变了，
+        // 2xx 却解析不出图片时，gpt-image 会改要 b64_json 再请求一次（response_format 变了，
         // 不是原样重放）；其余失败只有 1 次请求。
         let format_fallback = matches!(scenario, "invalid_json" | "no_image");
         assert_eq!(
@@ -384,7 +384,7 @@ fn reference_edits_send_the_selected_image_as_multipart() -> Result<()> {
     assert_eq!(result["ok"], true);
     let requests = api.requests();
     assert_eq!(requests[0].path, "/v1/images/edits");
-    assert_eq!(requests[0].fields["model"], "gpt-image-2");
+    assert_eq!(requests[0].fields["model"], "gpt-image");
     assert_eq!(requests[0].fields["quality"], "low");
     assert_eq!(requests[0].files[0].name, "image");
     assert_eq!(requests[0].files[0].bytes, bytes);
@@ -413,7 +413,7 @@ fn timeout_uses_one_free_network_retry_and_quality_batch_has_a_real_start_gap() 
     std::fs::write(&image, png(32, 24, 1)?)?;
     let mut server = Session::new(binary, root.path(), &api.env())?;
     server.initialize()?;
-    let result=server.call("image_batch_edit",json!({"prompt":"[scenario:concurrency_probe] batch","image_paths":[image,image],"model":"gpt-image-2","size":"2048x1152"}))?;
+    let result=server.call("image_batch_edit",json!({"prompt":"[scenario:concurrency_probe] batch","image_paths":[image,image],"model":"gpt-image","size":"2048x1152"}))?;
     assert_eq!(result["ok"], true);
     assert_eq!(api.requests().len(), 2);
     assert_eq!(api.metrics().max_active, 1);
