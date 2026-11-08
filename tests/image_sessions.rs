@@ -305,7 +305,7 @@ fn generated_session_continues_when_roots_are_canonical() -> Result<()> {
         .as_str()
         .unwrap_or_default()
         .to_owned();
-    assert!(!saved.starts_with(r"\?\"), "{saved}");
+    assert!(!saved.starts_with(r"\\?\"), "{saved}");
     drop(first);
 
     let mut second = Session::new(binary, &root, &env)?;
