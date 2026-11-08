@@ -24,7 +24,7 @@ use crate::{
     fs::input::ValidatedImage,
     fs::lock::BigRequestGate,
     http::download::ResolvedDownload,
-    http::response::{error_detail, sanitize_sensitive},
+    http::response::{error_detail, model_rejected, sanitize_sensitive},
     http::retry::{NETWORK_RETRY_DELAY, RETRY_JITTER_MAX, effective_retry_status, retry_delay},
 };
 
@@ -45,15 +45,14 @@ impl ApiResponse {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct RetryOptions {
-    pub enabled: bool,
-    pub big_size: bool,
-}
+pub use crate::domain::routing::RetryOptions;
 
 #[async_trait]
 pub trait RequestFactory: Send + Sync {
     async fn build(&self, client: &Client, key: &SecretString) -> Result<Request, String>;
+    fn model(&self) -> Option<&str> {
+        None
+    }
 }
 
 #[derive(Clone)]
@@ -64,6 +63,9 @@ pub struct JsonRequestFactory {
 
 #[async_trait]
 impl RequestFactory for JsonRequestFactory {
+    fn model(&self) -> Option<&str> {
+        self.body.get("model").and_then(Value::as_str)
+    }
     async fn build(&self, client: &Client, key: &SecretString) -> Result<Request, String> {
         let body = json_request_bytes(&self.body)?;
         client
@@ -107,6 +109,12 @@ pub struct MultipartRequestFactory {
 
 #[async_trait]
 impl RequestFactory for MultipartRequestFactory {
+    fn model(&self) -> Option<&str> {
+        self.fields
+            .iter()
+            .find(|(name, _)| name == "model")
+            .map(|(_, value)| value.as_str())
+    }
     async fn build(&self, client: &Client, key: &SecretString) -> Result<Request, String> {
         let mut form = Form::new();
         for (name, value) in &self.fields {
@@ -222,6 +230,12 @@ impl HttpExecutor {
         }
         let mut retry_attempt = 0_usize;
         while !response.is_success() {
+            if factory
+                .model()
+                .is_some_and(|model| model_rejected(response.status, &response.body, model))
+            {
+                break;
+            }
             let detail = error_detail(&response.body, &[key.expose_secret()]);
             let effective = effective_retry_status(response.status, &detail);
             let jitter = Duration::from_secs_f64(rand::random_range(

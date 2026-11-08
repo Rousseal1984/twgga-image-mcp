@@ -4,12 +4,12 @@ use secrecy::SecretString;
 use thiserror::Error;
 use url::Url;
 
-use crate::domain::routing::STANDARD_MODEL;
+use crate::domain::routing::{STANDARD_MODEL, canonical_model};
 
 mod env;
 mod paths;
 
-pub use env::{EnvironmentError, EnvironmentSnapshot};
+pub use env::{CredentialStatus, EnvironmentError, EnvironmentSnapshot};
 #[cfg(test)]
 pub(crate) use paths::test_paths;
 pub use paths::{AppPaths, PathError, PathPolicy, PathSource};
@@ -30,13 +30,6 @@ pub const ENV_KEYS: &[&str] = &[
     "TWGGA_RESPONSE_FORMAT",
     "TWGGA_TRUSTED_DOWNLOAD_HOSTS",
     "TWGGA_ALLOW_FAKE_IP_DOWNLOAD",
-    "TWGGA_GROK_BASEURL",
-    "TWGGA_GROK_API_KEY",
-    "XAI_API_KEY",
-    "GROK_API_KEY",
-    "XAI_MODEL",
-    "GROK_MODEL",
-    "TWGGA_GROK_SIZE_MODE",
     "TWGGA_CONTRACT_TESTING",
     "TWGGA_TEST_API_TIMEOUT_MS",
     "TWGGA_KEYCHAIN_ACCOUNT",
@@ -54,16 +47,14 @@ pub enum ResponseFormat {
 pub struct Config {
     pub base_url: Url,
     pub api_key: SecretString,
+    pub credential_status: CredentialStatus,
     pub default_model: String,
+    pub default_edit_model: String,
     pub use_shell_proxy: bool,
     pub response_format: ResponseFormat,
     pub response_formats_to_try: Vec<&'static str>,
     pub trusted_download_hosts: Vec<String>,
     pub allow_fake_ip_download: bool,
-    pub grok_base_url: String,
-    pub grok_api_key: SecretString,
-    pub xai_model: String,
-    pub grok_size_mode: String,
     pub api_request_timeout: Duration,
 }
 
@@ -84,7 +75,9 @@ impl Config {
     }
 
     pub fn from_env(environment: &EnvironmentSnapshot) -> Result<Self, ConfigError> {
-        Self::from_map(environment.as_map())
+        let mut config = Self::from_map(environment.as_map())?;
+        config.credential_status = environment.credential_status();
+        Ok(config)
     }
 
     pub fn from_map(environment: &BTreeMap<String, String>) -> Result<Self, ConfigError> {
@@ -127,21 +120,6 @@ impl Config {
         trusted_download_hosts.sort();
         trusted_download_hosts.dedup();
 
-        let grok_base_url = environment
-            .get("TWGGA_GROK_BASEURL")
-            .cloned()
-            .unwrap_or_else(|| base_url_raw.to_owned());
-        let grok_key = first_non_empty(
-            environment,
-            &["TWGGA_GROK_API_KEY", "XAI_API_KEY", "GROK_API_KEY"],
-        );
-        let xai_model = first_non_empty(environment, &["XAI_MODEL", "GROK_MODEL"])
-            .unwrap_or_else(|| "grok-imagine-image-lite".to_owned());
-        let grok_size_mode = environment
-            .get("TWGGA_GROK_SIZE_MODE")
-            .map(|value| value.trim().to_ascii_lowercase())
-            .filter(|value| !value.is_empty())
-            .unwrap_or_else(|| "contain".to_owned());
         let api_request_timeout = if environment
             .get("TWGGA_CONTRACT_TESTING")
             .is_some_and(|value| value.trim() == "1")
@@ -155,17 +133,29 @@ impl Config {
             Duration::from_secs(600)
         };
 
+        let model_override = environment
+            .get("TWGGA_MODEL")
+            .map(|value| value.trim())
+            .filter(|value| !value.is_empty())
+            .map(canonical_model);
+
         Ok(Self {
             base_url,
+            credential_status: if environment
+                .get("TWGGA_API_KEY")
+                .is_some_and(|value| !value.trim().is_empty())
+            {
+                CredentialStatus::Environment
+            } else {
+                CredentialStatus::Missing
+            },
             api_key: environment
                 .get("TWGGA_API_KEY")
                 .cloned()
                 .unwrap_or_default()
                 .into(),
-            default_model: environment
-                .get("TWGGA_MODEL")
-                .cloned()
-                .unwrap_or_else(|| STANDARD_MODEL.to_owned()),
+            default_model: model_override.unwrap_or(STANDARD_MODEL).to_owned(),
+            default_edit_model: model_override.unwrap_or(STANDARD_MODEL).to_owned(),
             use_shell_proxy: env_truthy(environment.get("TWGGA_USE_SHELL_PROXY"), false),
             response_format,
             response_formats_to_try,
@@ -174,10 +164,6 @@ impl Config {
                 environment.get("TWGGA_ALLOW_FAKE_IP_DOWNLOAD"),
                 true,
             ),
-            grok_base_url,
-            grok_api_key: grok_key.unwrap_or_default().into(),
-            xai_model,
-            grok_size_mode,
             api_request_timeout,
         })
     }
@@ -205,16 +191,6 @@ pub fn is_safe_base_url(url: &Url) -> bool {
 
 pub fn default_model() -> &'static str {
     STANDARD_MODEL
-}
-
-fn first_non_empty(environment: &BTreeMap<String, String>, names: &[&str]) -> Option<String> {
-    names.iter().find_map(|name| {
-        environment
-            .get(*name)
-            .map(|value| value.trim())
-            .filter(|value| !value.is_empty())
-            .map(str::to_owned)
-    })
 }
 
 fn env_truthy(value: Option<&String>, default: bool) -> bool {
@@ -247,7 +223,8 @@ mod tests {
     fn config_freezes_current_environment_and_redacts_secrets() {
         let config = Config::from_map(&base_env()).unwrap_or_else(|error| panic!("{error}"));
         assert_eq!(config.base_url.as_str(), "https://twgga.work/");
-        assert_eq!(config.default_model, "gpt-image-2");
+        assert_eq!(config.default_model, STANDARD_MODEL);
+        assert_eq!(config.default_edit_model, STANDARD_MODEL);
         assert_eq!(config.api_key.expose_secret(), "sk-super-secret");
         assert!(!format!("{config:?}").contains("sk-super-secret"));
         assert_eq!(config.response_formats_to_try, ["url", "b64_json"]);

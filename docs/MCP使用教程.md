@@ -16,46 +16,59 @@
 
 生成的图片会**自动保存到本地磁盘**，返回结果中包含文件的绝对路径，方便你在 IDE 或文件管理器中打开。
 
-当前仅支持 `gpt-image-2`。Grok 生图渠道暂时关闭，待服务器支持后再启用。
+当前仅支持 `gpt-image-2`。从 v0.5.0 起支持**连续编辑**：同一张图可以接着改，MCP 记住每一版图片和已经提过的要求，见 [4.6](#46-连续编辑session_id)。
 
-> **先说清一件事**：`size` 只是建议而非要求——请求 `1024x1024` 实测会回 `1122x1402`。**任何尺寸都不保证精确返回**。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，需要精确构图时把画幅要求写进 prompt。
+> **先说清一件事**：`size` 不决定输出像素。本站实测输出约 157 万像素，与请求的尺寸无关：请求 3840x2160、2048x1152、1536x1024 都返回 1254×1254。想要横图或竖图，把画幅写进 prompt，例如「16:9 宽幅横构图」得到 1672×941、「9:16 竖幅海报」得到 941×1672。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，请以它们为准，不要向用户承诺 2K/4K。
 
 ---
 
-## 二、安装与配置（Cursor）
+## 二、安装与配置
 
-### 2.1 一键安装（推荐）
+### 2.1 一行命令安装（推荐）
 
-```bash
-git clone https://github.com/Rousseal1984/twgga-image-mcp.git
-cd twgga-image-mcp
-python install.py
+Windows PowerShell：
+
+```powershell
+irm https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/scripts/install.ps1 | iex
 ```
 
-安装脚本会检查 Python ≥ 3.10、安装依赖、配置 API Key、写入 Claude/Codex 配置，并做一次 MCP 握手验证。
-
-非交互安装：
+macOS / Linux：
 
 ```bash
-TWGGA_API_KEY=sk-你的密钥 \
-TWGGA_SAVE_DIR=~/Pictures/twgga-out \
-python install.py --yes
+curl -fsSL https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/scripts/install.sh | sh
 ```
 
-### 2.2 手动配置 Cursor
+脚本会下载最新版程序、核对 `SHA256SUMS`，再运行程序自带的 `install --yes`：把程序复制到固定位置，写入 Claude Code（`~/.claude.json`）和 Codex（`~/.codex/config.toml`）的 `twgga-image` 配置。不需要 Python。
 
-在 `~/.cursor/mcp.json` 中添加：
+首次安装时如果还没保存过 Key，终端会提示输入一次，输入内容不显示。Key 需以 `sk-` 开头，并且能调用 `gpt-image-2`。
+
+### 2.2 API Key 保存在哪
+
+Key **不会**写进任何客户端配置文件，而是存进系统自带的安全凭据库，MCP 每次启动时自己读取：
+
+| 平台 | 保存位置 |
+|------|----------|
+| Windows | 凭据管理器 → Windows 凭据，条目名 `image2-api-key.twgga-image-mcp` |
+| macOS | 钥匙串，service=`twgga-image-mcp`、account=`image2-api-key` |
+| Linux | Secret Service |
+
+- 环境变量 `TWGGA_API_KEY` 非空时优先用它；旧版配置里的明文 Key 会在安装时迁移进凭据库并从配置里删除。
+- 更换 Key：运行安装位置下的 `twgga-image-mcp credentials set`（隐藏输入，不改客户端配置）。
+- macOS 后台启动不会弹钥匙串窗口；若提示未授权，在终端运行 `twgga-image-mcp credentials authorize`。
+
+### 2.3 手动配置 Cursor
+
+在 `~/.cursor/mcp.json` 中添加，`command` 指向安装位置下的程序（Windows 为 `%LOCALAPPDATA%\twgga-image-mcp\bin\twgga-image-mcp.exe`），`env` 里不要放 Key：
 
 ```json
 {
   "mcpServers": {
     "twgga-image-mcp": {
-      "command": "/path/to/twgga-image-mcp/.venv/bin/python",
-      "args": ["/path/to/twgga-image-mcp/server.py"],
+      "command": "C:\\Users\\你的用户名\\AppData\\Local\\twgga-image-mcp\\bin\\twgga-image-mcp.exe",
+      "args": [],
       "env": {
-        "TWGGA_API_KEY": "sk-你的Image2分组密钥",
-        "TWGGA_SAVE_DIR": "/home/你的用户名/Pictures/twgga-out",
-        "TWGGA_SAVE_DIR_ROOT": "/home/你的用户名/Pictures/twgga-out"
+        "TWGGA_SAVE_DIR": "C:\\Users\\你的用户名\\Pictures\\twgga-out",
+        "TWGGA_SAVE_DIR_ROOT": "C:\\Users\\你的用户名\\Pictures\\twgga-out"
       }
     }
   }
@@ -64,18 +77,29 @@ python install.py --yes
 
 配置完成后**重启 Cursor**，在 MCP 面板中确认 `twgga-image-mcp` 显示为已连接。
 
-### 2.3 环境变量说明
+### 2.4 Claude Desktop 普通对话模式
+
+Claude Desktop 的 Code 模式读的是 `~/.claude.json`，安装器已经写好。普通对话（Chat）模式使用独立文件，安装器**不会**自动写入：
+
+- Windows：`%APPDATA%\Claude\claude_desktop_config.json`
+- macOS：`~/Library/Application Support/Claude/claude_desktop_config.json`
+
+把 `~/.claude.json` 里的 `mcpServers.twgga-image` 整节复制进去，保留文件里其他 server，然后重启 Desktop。Key 已在系统凭据库里，不要复制明文 Key。
+
+### 2.5 环境变量说明
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `TWGGA_API_KEY` | 空 | TWGGA token，必须能访问 `gpt-image-2` |
+| `TWGGA_API_KEY` | 空 | 设置后优先于系统凭据库；一般不需要设置 |
 | `TWGGA_BASEURL` | `https://twgga.work` | TWGGA API 地址 |
 | `TWGGA_MODEL` | `gpt-image-2` | 默认模型 |
 | `TWGGA_SAVE_DIR` | `~/Pictures/twgga-out` | 默认输出目录 |
-| `TWGGA_SAVE_DIR_ROOT` | 同 `TWGGA_SAVE_DIR` | 安全根目录，所有输出必须在其下 |
+| `TWGGA_SAVE_DIR_ROOT` | 同 `TWGGA_SAVE_DIR` | 安全根目录，所有输出与会话记录都在其下 |
 | `TWGGA_USE_SHELL_PROXY` | `0` | 设为 `1` 才读取系统 shell 代理 |
 
-> **重要**：`TWGGA_API_KEY` 必须是能访问 `gpt-image-2` 的 Key。
+### 2.6 升级
+
+已安装的 MCP 不会自动更新。**重新运行 2.1 的一行命令即可升级**，已保存的 Key 不用重新输入。完成后重新连接 MCP，调用 `server_info` 确认 `version` 已是新版本。只替换下载的文件不会生效，客户端启动的是安装位置下的那份程序。
 
 ---
 
@@ -89,6 +113,7 @@ python install.py --yes
 | MCP 握手 | ✅ 正常 | `initialize` + `tools/list` 返回 5 个工具 |
 | `image_generate` | ✅ 已验证 | 出图正常；实际像素见 `saved.actual_size` |
 | `image_edit` | ✅ 已验证 | 单图参考 1024²、2048×1152、3840×2160 可用 |
+| 2026-11-09 复测 | ✅ 正常 | 文生图 1280x720/high 实得 1225×1284；两张 JPEG 参考图融合实得 1536×1024 |
 
 ### 3.2 如何自行验证
 
@@ -117,12 +142,14 @@ python install.py --yes
     {
       "path": "/home/wcx/Pictures/twgga-out/test_apple.png",
       "size_bytes": 123456,
-      "actual_size": "1024x1024",
-      "actual_megapixels": 1.05
+      "actual_size": "1254x1254",
+      "actual_megapixels": 1.57,
+      "format": "png"
     }
   ],
+  "size_honored": false,
   "errors": [],
-  "notes": []
+  "notes": ["⚠ 实际 1254×1254 (1.57MP) ≠ 请求 1024×1024 (1.05MP)；本站生图不保证精确像素……"]
 }
 ```
 
@@ -184,7 +211,7 @@ flowchart TD
 **返回要点**：
 
 - `api_key_configured`：Image2 密钥是否配置
-- `grok_channel_enabled`：当前固定为 `false`
+- `credentials.status`：Key 来自哪里（`system_store` 系统凭据库 / `environment` 环境变量 / `missing` 未配置）
 - `recommended_sizes`：各档位推荐尺寸
 - `capability_matrix`：各工具 × 各尺寸档的可用性
 - `retry_policy`：重试与并发策略
@@ -220,9 +247,12 @@ flowchart TD
 | `n` | int | | 生成张数 1–10；1K 可多张并发，≥2K 强制 n=1 |
 | `model` | string \| null | | 只接受 `gpt-image-2`；留空即用它 |
 | `quality` | string \| null | | `auto` / `low` / `medium` / `high`；留空使用后端默认值 |
+| `output_format` | string \| null | | `png` / `jpeg` / `webp`；留空不发送，实际格式见 `saved[].format` |
+| `session_id` | string \| null | | 传 `"new"` 开启连续编辑会话（要求 `n=1`），见 4.6 |
+| `context` | object \| null | | 会话里要长期保持的约束，如 `{"identity": "同一只橘猫"}` |
 | `save_dir` | string \| null | | 输出目录，必须在 `TWGGA_SAVE_DIR_ROOT` 下 |
 | `basename` | string \| null | | 文件名前缀，仅允许 `[A-Za-z0-9_\-.]` |
-| `api_key` | string \| null | | 临时覆盖环境变量中的 Key |
+| `api_key` | string \| null | | 临时覆盖系统凭据库中的 Key |
 
 **尺寸速查**：
 
@@ -242,14 +272,15 @@ flowchart TD
 
 **示例对话**：
 
-> 帮我生成一张赛博朋克东京夜景 4K 横屏壁纸。
+> 帮我生成一张赛博朋克东京夜景横屏壁纸。
 
-AI 应调用：
+AI 应把画幅写进 prompt，并如实告诉用户输出约 157 万像素：
 
 ```
 image_generate(
-  prompt="cyberpunk Tokyo at night, neon lights, rain reflections, cinematic",
-  size="3840x2160"
+  prompt="cyberpunk Tokyo at night, neon lights, rain reflections, cinematic, 16:9 wide landscape composition",
+  size="1536x1024",
+  session_id="new"
 )
 ```
 
@@ -279,10 +310,15 @@ image_generate(
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `prompt` | string | ✅ | 修改指令 |
-| `image_path` | string | ✅ | 输入图路径（绝对或相对），支持 PNG/JPG/WebP |
-| `mask_path` | string \| null | | 可选 alpha mask PNG；透明区域 = 编辑区，不透明 = 保留 |
-| `size` | string | | 输出尺寸，默认 `1024x1024` |
+| `image_path` | string | 见说明 | 输入图路径（绝对或相对），支持 PNG/JPG/WebP；单次编辑或新会话必填，已有会话可省略 |
+| `mask_path` | string \| null | | 可选 alpha mask PNG；透明区域 = 编辑区，不透明 = 保留；只作用于本轮 |
+| `size` | string | | 输出尺寸，默认 `1024x1024`；已有会话省略时继承 |
 | `model` | string \| null | | 只接受 `gpt-image-2` |
+| `quality` | string \| null | | `auto` / `low` / `medium` / `high`；已有会话省略时继承 |
+| `output_format` | string \| null | | `png` / `jpeg` / `webp` |
+| `session_id` | string \| null | | `"new"` 开新会话；传返回的 `session.id` 接着改，见 4.6 |
+| `parent_revision` | int \| null | | 从会话里的旧版本另开分支；省略用最新版本 |
+| `context` | object \| null | | 长期约束，字符串覆盖同名键，`null` 移除 |
 | `save_dir` | string \| null | | 输出目录 |
 | `basename` | string \| null | | 文件名前缀 |
 | `api_key` | string \| null | | 临时覆盖 Key |
@@ -298,7 +334,7 @@ image_generate(
 
 | 档位 | 可用性 | 说明 |
 |------|--------|------|
-| 1K | ✅ 已验证 | 两模型 1024×1024 edits 均成功并精确返回 |
+| 1K | ✅ 已验证 | 1024×1024 edits 成功；实际像素见 `saved.actual_size` |
 | 2K | ✅ 已验证 | 2048×1152 edits 成功；实际像素见 `saved.actual_size` |
 | 4K | ✅ 已验证 | 3840×2160 edits 成功；实际像素见 `saved.actual_size` |
 
@@ -425,6 +461,45 @@ image_multi_reference(
 
 ---
 
+### 4.6 连续编辑：`session_id`
+
+`image_generate` 和 `image_edit` 共用一套持久会话。会话保存每一版成功的图片、编辑要求和有效约束，重启 MCP 后也能接着改。
+
+| 你说的话 | 工具调用 | 会话结果 |
+|---|---|---|
+| 生成一只小猫跳伞 | `image_generate(session_id="new")` | A，第 1 版 |
+| 把降落伞换成滑翔伞 | `image_edit(session_id=A)` | A，第 2 版 |
+| 再生成一张海景人像 | `image_generate(session_id="new")` | B，第 1 版 |
+| 回到小猫，背景改成日落 | `image_edit(session_id=A)` | A，第 3 版 |
+
+要点：
+
+- 第一次传 `"new"`，之后传返回的 `session.id`；ID 由 AI 记住，用户不需要看到。
+- 已有会话里省略 `image_path`、`size`、`quality`、`model` 时，自动沿用所选版本；MCP 自动上传该版本图片。
+- `context` 写要长期保持的东西，例如人物面容、服装、背景。本轮 prompt 优先于历史和约束；要改长期属性时同时更新对应的键。
+- 失败的调用不推进版本；同一会话正在处理时再调用会返回「该编辑会话正在处理另一轮请求，请稍后重试」。
+- 外部图片想开始连续编辑：`image_edit(image_path=..., session_id="new")`。`image_multi_reference` 不维护会话，要细化它的结果也用这个办法。
+
+示例：
+
+```
+image_generate(
+  prompt="画一个穿红衣服的女孩，日落海边，自然的摄影构图",
+  session_id="new",
+  context={"identity": "同一女孩的面容和发型", "clothing": "红色衣服", "background": "日落海边"}
+)
+
+image_edit(
+  prompt="衣服改成蓝色，保留背景和人物面容",
+  session_id="edit_<返回的32位标识>",
+  context={"clothing": "蓝色衣服"}
+)
+```
+
+更多细节见 [连续编辑指南](multi-turn-editing.md)。
+
+---
+
 ## 五、尺寸与能力矩阵
 
 ### 5.1 核心规则
@@ -439,31 +514,30 @@ image_multi_reference(
 
 | 场景 | 工具 | 可靠性 | 实际输出 |
 |------|------|--------|----------|
-| 1K 文生图 | `image_generate` | ✅ 已验证 | 两模型 1024² 精确返回 |
+| 1K 文生图 | `image_generate` | ✅ 已验证 | 实际像素以 `saved.actual_size` 为准 |
 | 2K/4K 文生图 | `image_generate` | ✅ 已验证 | 实际像素以 `saved.actual_size` 为准 |
-| 1K 单图编辑 | `image_edit` | ✅ 已验证 | 两模型 1024² 精确返回 |
+| 1K 单图编辑 | `image_edit` | ✅ 已验证 | 实际像素以 `saved.actual_size` 为准 |
 | 2K/4K 带参考图编辑 | `image_edit` | ✅ 已验证 | 实际像素以 `saved.actual_size` 为准 |
 | 1K 多图融合 | `image_multi_reference` | ✅ 历史验证 | 核对 `saved.actual_size` |
 | 2K/4K 多图融合 | `image_multi_reference` | ✅ 已开放 | ≥2K 串行；失败时直接返回 Images API 错误 |
 | 批量编辑 ≥2K | `image_batch_edit` | ✅ 已开放 | 逐张串行 + 1.5s 间隔 |
 
-### 5.3 带参考图直接输出 4K
+### 5.3 想要大图怎么办
 
-当前线路不再需要旧的两步绕行。单图参考直接调用：
+本站输出约 157 万像素，与请求的 `size` 无关。请求 2K/4K 只会强制 `n=1` 并串行排队，**不会更清晰**。正确做法：
 
-```
-image_edit(
-  prompt="保持主体与构图，补充高清材质和细节",
-  image_path="/path/to/reference.png",
-  size="3840x2160"
-)
-```
+- 把画幅写进 prompt，例如「16:9 宽幅横构图」「9:16 竖幅海报」。
+- 如实告诉用户实际像素（`saved.actual_size`），需要更大尺寸时在本地放大。
 
 ---
 
-## 六、Grok 通道状态
+## 六、会话记录与清理
 
-Grok 生图渠道暂时关闭。工具只接受 `gpt-image-2`；传入 Grok 模型会在读取本地图片或发出网络请求前被拒绝。内部兼容实现暂时保留，待服务器支持恢复后再启用。
+会话记录是 MCP 保存在你电脑上的 JSON 文件，位于 `TWGGA_SAVE_DIR_ROOT/.twgga-sessions/edit_<id>/`，每个成功版本一个文件，不含图片本身；图片仍在正常输出目录。
+
+- 只想清除记忆：把对应的 `edit_<id>` 目录移走，图片仍保留。
+- 不要在请求进行中删除会话目录或锁文件。
+- 目前没有自动清理，占用估算与归档方法见 [会话存储说明](session-storage.md)。
 
 ---
 
@@ -486,8 +560,11 @@ Grok 生图渠道暂时关闭。工具只接受 `gpt-image-2`；传入 Grok 模�
 |------|------|
 | `path` | 文件绝对路径 |
 | `size_bytes` | 文件字节数 |
-| `actual_size` | 从图片 header 读出的真实像素（如 `"1024x1024"`） |
+| `actual_size` | 从图片 header 读出的真实像素（如 `"1254x1254"`） |
 | `actual_megapixels` | 实际百万像素 |
+| `format` | 按文件内容判定的格式（`png` / `jpeg` / `webp`） |
+
+使用会话时，结果里另有 `session`：`id`、`revision`（当前版本号）、`parent_revision`（编辑来源）和 `context`（当前有效约束）。
 
 > **注意**：`size` 只是建议，任何尺寸都可能被重映射；**始终**以 `saved.actual_size` 为准。需要精确构图时把画幅要求写进 prompt。
 
@@ -501,11 +578,12 @@ MCP 内置多项安全限制：
 |------|------|
 | 输出目录牢笼 | 所有输出必须在 `TWGGA_SAVE_DIR_ROOT` 下 |
 | basename 校验 | 仅允许 `[A-Za-z0-9_\-.]`，禁止 `/`、`..` |
-| 输入图校验 | 按 magic bytes 识别并用 Pillow 完整解码；仅允许 PNG/JPEG/WebP，截断或损坏文件在请求前拒绝 |
+| 输入图校验 | 按 magic bytes 识别并完整解码；仅允许 PNG/JPEG/WebP，截断或损坏文件在请求前拒绝 |
 | 输入大小 | 单图 ≤4MB；多图参考总和 ≤8MB |
 | 响应大小 | 远端响应 ≤25MB |
 | SSRF 防护 | 拒绝真内网地址；可信 CDN + fake-ip（198.18.0.0/15）在默认配置下放行 |
 | base_url 锁定 | 运行期不可通过 tool 参数修改 API 地址 |
+| Key 存储 | 存在系统凭据库，不写入任何客户端配置文件，也不出现在返回结果里 |
 
 ---
 
@@ -513,9 +591,11 @@ MCP 内置多项安全限制：
 
 | 错误信息 | 原因 | 解决方案 |
 |----------|------|----------|
-| `未配置 API key` | 环境变量未设置 | 在 mcp.json 的 `env` 中配置 `TWGGA_API_KEY` |
-| `分组 grok 下模型 gpt-image-2 无可用渠道` | Key 分组填错 | 将可访问两个 Image2 模型的 Key 填入 `TWGGA_API_KEY` |
-| `Grok 生图渠道暂时关闭` | 当前版本主动禁用 Grok | 改用 `gpt-image-2`，等待服务器支持恢复 |
+| `未配置 API key` / 提示运行 `credentials` | 系统凭据库和环境变量里都没有 Key | 重新运行 2.1 的一行命令，或运行 `twgga-image-mcp credentials set` |
+| `……下模型 gpt-image-2 无可用渠道` | Key 所在分组不含生图 | 在控制台把 Key 的分组改为包含 gpt-image-2 的分组 |
+| `不支持 model=…` | 传了本站没有的模型名 | 去掉 `model` 参数或改为 `gpt-image-2` |
+| `output_format 不支持 'gif'` | 本站不提供动图 | 改用 `png` / `jpeg` / `webp` |
+| `该编辑会话正在处理另一轮请求` | 同一会话的上一次调用还没结束 | 等它完成后再试 |
 | `size W/H 必须是 16 的倍数` | 尺寸不符合约束 | 改为如 `1024x1024`、`2048x1152` |
 | `HTTP 524: timeout` | 请求超时 | 改小尺寸或稍后重试；2K/4K 高负载时偶发 |
 | `SSRF 防护` + `198.18.x.x` | 旧版或 `TWGGA_ALLOW_FAKE_IP_DOWNLOAD=0` | 升级 MCP 或设 `TWGGA_ALLOW_FAKE_IP_DOWNLOAD=1`；`auto` 模式下 URL 失败会自动重试 `b64_json` |
@@ -556,6 +636,14 @@ MCP 内置多项安全限制：
 - /path/to/ref2.png
 ```
 
+### 连续编辑
+
+```
+刚才那张图，把背景改成雪山，人物保持不变。
+```
+
+AI 会沿用那张图的会话 ID 调用 `image_edit`，不需要你提供路径。
+
 ### 查询能力
 
 ```
@@ -584,14 +672,16 @@ MCP 内置多项安全限制：
 ## 十二、卸载
 
 ```bash
-# 仅移除 MCP 配置（Claude + Codex）
-python install.py --reset
-
-# 同时卸载 pip 包
-python -m pip uninstall -y twgga-image-mcp
+# 仅移除 MCP 配置（Claude Code + Codex），在安装位置运行
+twgga-image-mcp reset --yes
 ```
 
-Cursor 需手动从 `~/.cursor/mcp.json` 删除 `twgga-image-mcp` 节。
+`reset` 不会删除已保存的 Key。如需一并删除：
+
+- Windows：凭据管理器里删除 `image2-api-key.twgga-image-mcp`，或运行 `cmdkey /delete:image2-api-key.twgga-image-mcp`
+- macOS：`security delete-generic-password -s twgga-image-mcp -a image2-api-key`
+
+最后删除安装目录（Windows 为 `%LOCALAPPDATA%\twgga-image-mcp`）。Cursor 和 Claude Desktop 普通对话模式需手动删除对应配置节。
 
 ---
 
@@ -607,4 +697,4 @@ Cursor 需手动从 `~/.cursor/mcp.json` 删除 `twgga-image-mcp` 节。
 
 ---
 
-*文档版本：基于 twgga-image-mcp 当前代码库生成，实测环境为 Cursor + WSL2 + Linux。*
+*文档版本：适用于 twgga-image-mcp v0.5.0。*

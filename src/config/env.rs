@@ -2,9 +2,26 @@ use std::{collections::BTreeMap, env::VarError, fmt};
 
 use thiserror::Error;
 
+use crate::credentials::{
+    CredentialInteraction, CredentialReader, DEFAULT_CREDENTIAL_ACCOUNT,
+    DEFAULT_CREDENTIAL_SERVICE, SystemCredentials,
+};
+
 #[derive(Clone, Default, Eq, PartialEq)]
 pub struct EnvironmentSnapshot {
     values: BTreeMap<String, String>,
+    credential_status: CredentialStatus,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CredentialStatus {
+    Environment,
+    SystemStore,
+    #[default]
+    Missing,
+    AccessRequired,
+    Unavailable,
 }
 
 #[derive(Debug, Error)]
@@ -27,11 +44,22 @@ impl EnvironmentSnapshot {
                 }
             }
         }
-        Ok(Self { values })
+        Ok(Self::from_map(values))
     }
 
     pub fn from_map(values: BTreeMap<String, String>) -> Self {
-        Self { values }
+        let credential_status = if values
+            .get("TWGGA_API_KEY")
+            .is_some_and(|value| !value.trim().is_empty())
+        {
+            CredentialStatus::Environment
+        } else {
+            CredentialStatus::Missing
+        };
+        Self {
+            values,
+            credential_status,
+        }
     }
 
     pub fn get(&self, name: &str) -> Option<&str> {
@@ -43,61 +71,60 @@ impl EnvironmentSnapshot {
     }
 
     pub fn insert(&mut self, name: impl Into<String>, value: impl Into<String>) {
-        self.values.insert(name.into(), value.into());
+        let name = name.into();
+        let value = value.into();
+        if name == "TWGGA_API_KEY" {
+            self.credential_status = if value.trim().is_empty() {
+                CredentialStatus::Missing
+            } else {
+                CredentialStatus::Environment
+            };
+        }
+        self.values.insert(name, value);
     }
 
     pub fn load_platform_secrets(&mut self) {
-        self.load_macos_keychain_secret();
+        self.load_platform_secrets_with(&SystemCredentials);
     }
 
-    #[cfg(target_os = "macos")]
-    fn load_macos_keychain_secret(&mut self) {
+    pub fn load_platform_secrets_with(&mut self, reader: &dyn CredentialReader) {
         if self
             .values
             .get("TWGGA_API_KEY")
             .is_some_and(|value| !value.trim().is_empty())
         {
+            self.credential_status = CredentialStatus::Environment;
             return;
         }
-        let Some(service) = self
+        let service = self
             .values
             .get("TWGGA_KEYCHAIN_SERVICE")
             .map(|value| value.trim())
             .filter(|value| !value.is_empty())
-        else {
-            return;
-        };
-        let Some(account) = self
+            .unwrap_or(DEFAULT_CREDENTIAL_SERVICE);
+        let account = self
             .values
             .get("TWGGA_KEYCHAIN_ACCOUNT")
-            .or_else(|| self.values.get("USER"))
-            .or_else(|| self.values.get("USERNAME"))
             .map(|value| value.trim())
             .filter(|value| !value.is_empty())
-        else {
-            return;
-        };
-        let output = std::process::Command::new("/usr/bin/security")
-            .args(["find-generic-password", "-a", account, "-s", service, "-w"])
-            .stderr(std::process::Stdio::null())
-            .output();
-        let Ok(output) = output else {
-            return;
-        };
-        if !output.status.success() {
-            return;
-        }
-        let Ok(secret) = String::from_utf8(output.stdout) else {
-            return;
-        };
-        let secret = secret.trim();
-        if !secret.is_empty() {
-            self.values.insert("TWGGA_API_KEY".into(), secret.into());
-        }
+            .unwrap_or(DEFAULT_CREDENTIAL_ACCOUNT);
+        self.credential_status =
+            match reader.read(service, account, CredentialInteraction::Forbidden) {
+                Ok(Some(secret)) if !secret.trim().is_empty() => {
+                    self.values.insert("TWGGA_API_KEY".into(), secret);
+                    CredentialStatus::SystemStore
+                }
+                Ok(_) => CredentialStatus::Missing,
+                Err(crate::credentials::CredentialStoreError::AccessRequired) => {
+                    CredentialStatus::AccessRequired
+                }
+                Err(_) => CredentialStatus::Unavailable,
+            };
     }
 
-    #[cfg(not(target_os = "macos"))]
-    fn load_macos_keychain_secret(&mut self) {}
+    pub fn credential_status(&self) -> CredentialStatus {
+        self.credential_status
+    }
 }
 
 impl fmt::Debug for EnvironmentSnapshot {

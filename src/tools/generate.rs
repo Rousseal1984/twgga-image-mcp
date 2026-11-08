@@ -5,24 +5,21 @@ use serde_json::{Map, Value};
 use crate::{
     domain::{
         basename::safe_basename,
-        routing::{
-            infer_size_from_prompt, is_large_tier, is_quality_model, model_error, resolve_model,
-            size_note,
-        },
-        size::{SizeTier, size_tier, validate_n, validate_quality, validate_size},
+        routing::{ModelRoute, infer_size_from_prompt, output_format_note, size_note},
+        size::{validate_n, validate_size},
     },
     fs::output_store::{OutputDirectory, SavedImage},
-    http::client::RetryOptions,
-    http::response::error_detail,
+    http::response::{error_detail, sanitize_sensitive},
     providers::GenerateRequest,
 };
 
 use super::{
-    GenerateParams, ToolEngine, ToolFailure,
+    EditParams, GenerateParams, ToolEngine, ToolFailure,
     common::{
         default_basename, push_note_once, python_string_repr, resolve_key, saved_value,
         validation_error,
     },
+    edit_session::{EditSession, MAX_PROMPT_CHARS, Revision, sanitize_context},
 };
 
 impl ToolEngine {
@@ -33,7 +30,29 @@ impl ToolEngine {
         if let Some(error) = validate_n(&Value::from(params.n)) {
             return Ok(validation_error(error));
         }
-        if let Some(error) = model_error(params.model.as_deref(), &self.config.default_model) {
+        if params.session_id.is_none()
+            && (params.parent_revision.is_some() || !params.context.is_empty())
+        {
+            return Ok(validation_error(
+                "parent_revision 和 context 需要 session_id；用 new 开始会话",
+            ));
+        }
+        if params.session_id.is_some() && params.n != 1 {
+            return Ok(validation_error(
+                "会话生成仅支持 n=1；多张候选请省略 session_id，再用所选图片开始编辑会话",
+            ));
+        }
+        if params.session_id.as_deref().is_some_and(|id| id != "new") {
+            return self.continue_generation(params).await;
+        }
+        if params.session_id.is_some() && params.prompt.chars().count() > MAX_PROMPT_CHARS {
+            return Ok(validation_error("prompt 最多 32000 个字符"));
+        }
+        if let Some(error) = self.model_error(
+            params.model.as_deref(),
+            &self.config.default_model,
+            params.api_key.as_ref(),
+        ) {
             return Ok(validation_error(error));
         }
         let safe_stem = params
@@ -47,22 +66,6 @@ impl ToolEngine {
             );
             return Ok(validation_error(message));
         }
-        let quality_value = params
-            .quality
-            .as_ref()
-            .map(|value| Value::String(value.clone()));
-        let (quality, quality_error) = validate_quality(quality_value.as_ref());
-        if let Some(error) = quality_error {
-            return Ok(validation_error(error));
-        }
-        let location = match self
-            .output_store
-            .resolve_save_dir(params.save_dir.as_deref())
-        {
-            Ok(location) => location,
-            Err(error) => return Ok(validation_error(error)),
-        };
-
         let (requested_size, inferred_note) = match params.size {
             Some(size) => (size, None),
             None => match infer_size_from_prompt(&params.prompt) {
@@ -82,44 +85,84 @@ impl ToolEngine {
                 size_error.unwrap_or_else(|| "size 校验失败".into()),
             ));
         };
-        let (effective_model, mut notes) =
-            resolve_model(params.model.as_deref(), &self.config.default_model, &size);
+        let (route, mut notes) =
+            ModelRoute::resolve(params.model.as_deref(), &self.config.default_model, &size);
+        let quality = match route.validate_quality(params.quality.as_deref()) {
+            Ok(quality) => quality,
+            Err(error) => return Ok(validation_error(error)),
+        };
+        let output_format = match route.validate_output_format(params.output_format.as_deref()) {
+            Ok(output_format) => output_format,
+            Err(error) => return Ok(validation_error(error)),
+        };
+        let location = match self
+            .output_store
+            .resolve_save_dir(params.save_dir.as_deref())
+        {
+            Ok(location) => location,
+            Err(error) => return Ok(validation_error(error)),
+        };
         if let Some(note) = inferred_note {
             notes.insert(0, note);
         }
         let key = resolve_key(self.config.as_ref(), params.api_key)?;
-        let tier = size_tier(&size);
-        let mut requested_n = params.n as usize;
-        if is_large_tier(tier) && requested_n > 1 {
-            notes.push(format!(
-                "{} 强制 N=1，已忽略请求的 n={requested_n}",
-                tier_label(tier).to_ascii_uppercase()
-            ));
-            requested_n = 1;
-        }
-        let quality_route = is_quality_model(&effective_model);
-        let concurrency = if requested_n > 1
-            && matches!(tier, SizeTier::Small | SizeTier::OneK)
-            && !quality_route
+        let session = match params
+            .session_id
+            .as_deref()
+            .map(|id| EditSession::open(&self.paths.save_root, id, params.parent_revision))
+            .transpose()
         {
-            5
+            Ok(session) => session,
+            Err(error) => return Ok(validation_error(error)),
+        };
+        // Validate caller limits before redaction can shorten base64-like values.
+        if let Some(session) = &session
+            && let Err(error) = session.context(&params.context)
+        {
+            return Ok(validation_error(error));
+        }
+        let instruction = sanitize_sensitive(
+            &params.prompt,
+            &[key.expose_secret(), self.config.api_key.expose_secret()],
+        );
+        let patch = sanitize_context(
+            params.context,
+            &[key.expose_secret(), self.config.api_key.expose_secret()],
+        );
+        let context = match session
+            .as_ref()
+            .map(|session| session.context(&patch))
+            .transpose()
+        {
+            Ok(context) => context.unwrap_or_default(),
+            Err(error) => return Ok(validation_error(error)),
+        };
+        let effective_prompt = match session
+            .as_ref()
+            .map(|session| session.generation_prompt(&instruction, &context))
+            .transpose()
+        {
+            Ok(prompt) => prompt.unwrap_or_else(|| params.prompt.clone()),
+            Err(error) => return Ok(validation_error(error)),
+        };
+        let (requested_n, n_note) = route.cap_n(params.n as usize);
+        notes.extend(n_note);
+        let concurrency = if requested_n > 1 {
+            route.parallel_limit()
         } else {
             1
         };
         let stem = safe_stem.unwrap_or_else(|| default_basename("gen"));
-        let retry = RetryOptions {
-            enabled: quality_route || is_large_tier(tier),
-            big_size: is_large_tier(tier),
-        };
 
         let mut results = if concurrency > 1 {
             stream::iter(0..requested_n)
                 .map(|index| {
                     let engine = self.clone();
-                    let prompt = params.prompt.clone();
+                    let prompt = effective_prompt.clone();
                     let size = size.clone();
-                    let model = effective_model.clone();
+                    let route = route.clone();
                     let quality = quality.clone();
+                    let output_format = output_format.clone();
                     let location = location.clone();
                     let stem = stem.clone();
                     let key = key.clone();
@@ -129,12 +172,12 @@ impl ToolEngine {
                                 index,
                                 &prompt,
                                 &size,
-                                &model,
+                                &route,
                                 quality.as_deref(),
+                                output_format.as_deref(),
                                 &location,
                                 &stem,
                                 &key,
-                                retry,
                             )
                             .await
                     }
@@ -148,14 +191,14 @@ impl ToolEngine {
                 sequential.push(
                     self.generate_one(
                         index,
-                        &params.prompt,
+                        &effective_prompt,
                         &size,
-                        &effective_model,
+                        &route,
                         quality.as_deref(),
+                        output_format.as_deref(),
                         &location,
                         &stem,
                         &key,
-                        retry,
                     )
                     .await,
                 );
@@ -171,15 +214,31 @@ impl ToolEngine {
 
         let mut saved = Vec::new();
         let mut errors = Vec::new();
+        let mut used_fallback = false;
+        let mut actual_model = route.model().to_owned();
         for result in results {
+            used_fallback |= result.used_fallback;
+            if saved.is_empty() {
+                actual_model = result.model.clone();
+            }
             for note in result.notes {
                 push_note_once(&mut notes, note);
             }
             if let Some(image) = result.saved {
-                if let Some(note) = size_note(&size, Some(image.actual_size)) {
+                if let Some(note) = size_note(
+                    &size,
+                    Some(image.actual_size),
+                    output_format.as_deref(),
+                    image.format,
+                ) {
                     push_note_once(&mut notes, note);
                 }
-                saved.push(saved_value(&image, Some(result.index + 1))?);
+                if let Some(note) = output_format_note(output_format.as_deref(), image.format) {
+                    push_note_once(&mut notes, note);
+                }
+                let mut value = saved_value(&image, Some(result.index + 1))?;
+                value["model"] = Value::String(result.model);
+                saved.push(value);
             }
             if let Some(error) = result.error {
                 errors.push(Value::String(error));
@@ -195,11 +254,43 @@ impl ToolEngine {
                     == requested_dimensions
             });
         let mut output = Map::new();
-        output.insert("ok".into(), Value::Bool(!saved.is_empty()));
-        output.insert("model".into(), Value::String(effective_model));
+        let mut committed = true;
+        if let Some(session) = &session
+            && let Some(image) = saved.first()
+        {
+            let session_value = session.commit(Revision {
+                revision: 0,
+                parent_revision: None,
+                // The first revision has no input image; its generated output starts history.
+                input_path: String::new(),
+                output_path: image["path"]
+                    .as_str()
+                    .ok_or_else(|| ToolFailure("输出路径不是合法 Unicode".into()))?
+                    .to_owned(),
+                instruction,
+                context,
+                model: actual_model.clone(),
+                size: size.clone(),
+                quality: quality.clone(),
+            });
+            match session_value {
+                Ok(value) => {
+                    output.insert("session".into(), value);
+                }
+                Err(error) => {
+                    committed = false;
+                    errors.push(Value::String(format!(
+                        "图片已保存，但会话提交失败：{error}"
+                    )));
+                    output.insert("session".into(), session.unchanged_value());
+                }
+            }
+        }
+        output.insert("ok".into(), Value::Bool(!saved.is_empty() && committed));
+        output.insert("model".into(), Value::String(actual_model));
         output.insert("size".into(), Value::String(size));
         output.insert("requested_n".into(), Value::from(requested_n));
-        output.insert("used_fallback".into(), Value::Bool(false));
+        output.insert("used_fallback".into(), Value::Bool(used_fallback));
         output.insert("size_honored".into(), Value::Bool(size_honored));
         output.insert("saved".into(), Value::Array(saved));
         output.insert("errors".into(), Value::Array(errors));
@@ -210,45 +301,90 @@ impl ToolEngine {
         Ok(Value::Object(output))
     }
 
+    async fn continue_generation(&self, params: GenerateParams) -> Result<Value, ToolFailure> {
+        // A continued generation uses the selected image and the same session machinery as edits.
+        // Keep image_generate's list-shaped result so callers can use either tool in one session.
+        let mut result = self
+            .image_edit(EditParams {
+                prompt: params.prompt,
+                image_path: None,
+                mask_path: None,
+                size: params.size,
+                model: params.model,
+                quality: params.quality,
+                output_format: params.output_format,
+                save_dir: params.save_dir,
+                basename: params.basename,
+                api_key: params.api_key,
+                session_id: params.session_id,
+                parent_revision: params.parent_revision,
+                context: params.context,
+            })
+            .await?;
+        if let Some(mut saved) = result.get("saved").cloned() {
+            let size_honored = saved.get("actual_size") == result.get("size");
+            saved["index"] = Value::from(1);
+            result["saved"] = Value::Array(vec![saved]);
+            result["requested_n"] = Value::from(1);
+            result["size_honored"] = Value::Bool(size_honored);
+            result["errors"] = Value::Array(result.get("error").cloned().into_iter().collect());
+            if let Some(notes) = result.get_mut("notes").and_then(Value::as_array_mut) {
+                notes.push(Value::String(
+                    "已有会话通过参考编辑延续上一版本图片与上下文".into(),
+                ));
+            }
+        }
+        Ok(result)
+    }
+
     #[allow(clippy::too_many_arguments)]
     async fn generate_one(
         &self,
         index: usize,
         prompt: &str,
         size: &str,
-        model: &str,
+        route: &ModelRoute,
         quality: Option<&str>,
+        output_format: Option<&str>,
         location: &OutputDirectory,
         stem: &str,
         key: &SecretString,
-        retry: RetryOptions,
     ) -> GenerateOneResult {
         let mut notes = Vec::new();
         let mut last_error: Option<String> = None;
-        for (format_index, response_format) in
-            self.config.response_formats_to_try.iter().enumerate()
+        let mut actual_model = route.model().to_owned();
+        let mut used_fallback = false;
+        for (format_index, response_format) in route
+            .response_formats(&self.config.response_formats_to_try)
+            .enumerate()
         {
-            if format_index > 0 {
+            if format_index > 0
+                && let Some(response_format) = response_format
+            {
                 notes.push(format!(
                     "URL 落盘失败（{}）→ 重试 API response_format={response_format}",
                     last_error.as_deref().unwrap_or("保存失败")
                 ));
             }
-            let response = self
+            let image_response = self
                 .provider
                 .generate(
                     GenerateRequest {
-                        model,
+                        model: &actual_model,
                         prompt,
                         size,
                         quality,
                         response_format,
+                        output_format,
                     },
                     key,
-                    retry,
+                    route.retry(),
                     &mut notes,
                 )
                 .await;
+            actual_model = image_response.model;
+            used_fallback |= image_response.used_fallback;
+            let response = image_response.response;
             if !response.is_success() {
                 last_error = Some(format!(
                     "#{} HTTP {}: {}",
@@ -264,7 +400,9 @@ impl ToolEngine {
                 .await
             {
                 Ok(saved) => {
-                    if format_index > 0 {
+                    if format_index > 0
+                        && let Some(response_format) = response_format
+                    {
                         notes.push(format!("已通过 response_format={response_format} 成功落盘"));
                     }
                     return GenerateOneResult {
@@ -272,6 +410,8 @@ impl ToolEngine {
                         saved: Some(saved),
                         error: None,
                         notes,
+                        model: actual_model,
+                        used_fallback,
                     };
                 }
                 Err(error) => {
@@ -284,6 +424,8 @@ impl ToolEngine {
             saved: None,
             error: Some(last_error.unwrap_or_else(|| format!("#{} 保存失败", index + 1))),
             notes,
+            model: actual_model,
+            used_fallback,
         }
     }
 }
@@ -293,16 +435,8 @@ struct GenerateOneResult {
     saved: Option<SavedImage>,
     error: Option<String>,
     notes: Vec<String>,
-}
-
-fn tier_label(tier: SizeTier) -> &'static str {
-    match tier {
-        SizeTier::Unknown => "unknown",
-        SizeTier::Small => "small",
-        SizeTier::OneK => "1k",
-        SizeTier::TwoK => "2k",
-        SizeTier::FourK => "4k",
-    }
+    model: String,
+    used_fallback: bool,
 }
 
 #[cfg(test)]
@@ -334,7 +468,7 @@ mod tests {
 
     struct FakeProvider {
         body: Vec<u8>,
-        calls: Mutex<Vec<(String, String, String)>>,
+        calls: Mutex<Vec<(String, String, Option<String>)>>,
         active: AtomicUsize,
         max_active: AtomicUsize,
     }
@@ -347,35 +481,41 @@ mod tests {
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
+        ) -> crate::providers::ImageResponse {
             self.calls.lock().await.push((
                 request.model.into(),
                 request.size.into(),
-                request.response_format.into(),
+                request.response_format.map(str::to_owned),
             ));
             let active = self.active.fetch_add(1, Ordering::SeqCst) + 1;
             self.max_active.fetch_max(active, Ordering::SeqCst);
             tokio::time::sleep(std::time::Duration::from_millis(30)).await;
             self.active.fetch_sub(1, Ordering::SeqCst);
-            ApiResponse {
-                status: 200,
-                headers: reqwest::header::HeaderMap::new(),
-                body: self.body.clone(),
-            }
+            crate::providers::ImageResponse::new(
+                ApiResponse {
+                    status: 200,
+                    headers: reqwest::header::HeaderMap::new(),
+                    body: self.body.clone(),
+                },
+                request.model,
+            )
         }
 
         async fn edit(
             &self,
-            _request: EditRequest<'_>,
+            request: EditRequest<'_>,
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
-            ApiResponse {
-                status: 500,
-                headers: reqwest::header::HeaderMap::new(),
-                body: Vec::new(),
-            }
+        ) -> crate::providers::ImageResponse {
+            crate::providers::ImageResponse::new(
+                ApiResponse {
+                    status: 500,
+                    headers: reqwest::header::HeaderMap::new(),
+                    body: Vec::new(),
+                },
+                request.model,
+            )
         }
     }
 
@@ -389,6 +529,7 @@ mod tests {
             ),
             ("TWGGA_SAVE_DIR".into(), out.to_string_lossy().into_owned()),
             ("TWGGA_API_KEY".into(), "sk-test".into()),
+            ("TWGGA_BASEURL".into(), "http://127.0.0.1:9".into()),
         ]);
         let config =
             Arc::new(Config::from_map(&environment).unwrap_or_else(|error| panic!("{error}")));
@@ -428,9 +569,13 @@ mod tests {
             n: 1,
             model: None,
             quality: None,
+            output_format: None,
             save_dir: None,
             basename: Some("test".into()),
             api_key: None,
+            session_id: None,
+            parent_revision: None,
+            context: BTreeMap::new(),
         }
     }
 
@@ -447,7 +592,7 @@ mod tests {
         assert_eq!(result["saved"][0]["actual_size"], "32x24");
         assert_eq!(
             provider.calls.lock().await.as_slice(),
-            &[("gpt-image-2".into(), "1024x1024".into(), "url".into())]
+            &[("gpt-image-2".into(), "1024x1024".into(), Some("url".into()))]
         );
     }
 
@@ -456,6 +601,7 @@ mod tests {
         let (_temp, engine, provider) = fixture();
         let mut request = params();
         request.size = Some("2048x2048".into());
+        request.model = Some("gpt-image-2".into());
         request.n = 4;
         let result = engine
             .image_generate(request)

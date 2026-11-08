@@ -4,11 +4,13 @@ use serde_json::{Map, Value};
 use url::Url;
 
 use crate::{
+    domain::routing::suffix_fallback,
     http::client::{
-        ApiResponse, HttpExecutor, JsonRequestFactory, MultipartRequestFactory, RetryOptions,
+        HttpExecutor, JsonRequestFactory, MultipartRequestFactory, RequestFactory, RetryOptions,
         UploadPart,
     },
-    providers::{EditRequest, GenerateRequest, ImageProvider},
+    http::response::model_rejected,
+    providers::{EditRequest, GenerateRequest, ImageProvider, ImageResponse},
 };
 
 #[derive(Clone)]
@@ -26,6 +28,49 @@ impl Image2Provider {
             http,
         })
     }
+
+    async fn execute<F: ImageRequestFactory>(
+        &self,
+        mut factory: F,
+        model: &str,
+        key: &SecretString,
+        retry: RetryOptions,
+        notes: &mut Vec<String>,
+    ) -> ImageResponse {
+        let response = self.http.execute(&factory, key, retry, notes).await;
+        let Some(fallback) = suffix_fallback(model)
+            .filter(|_| model_rejected(response.status, &response.body, model))
+        else {
+            return ImageResponse::new(response, model);
+        };
+        notes.push(format!(
+            "服务端明确拒绝模型 {model} → 使用兼容 ID {fallback} 补试一次"
+        ));
+        factory.set_model(fallback);
+        ImageResponse {
+            response: self.http.execute(&factory, key, retry, notes).await,
+            model: fallback.to_owned(),
+            used_fallback: true,
+        }
+    }
+}
+
+trait ImageRequestFactory: RequestFactory {
+    fn set_model(&mut self, model: &str);
+}
+impl ImageRequestFactory for JsonRequestFactory {
+    fn set_model(&mut self, model: &str) {
+        self.body["model"] = Value::String(model.to_owned());
+    }
+}
+impl ImageRequestFactory for MultipartRequestFactory {
+    fn set_model(&mut self, model: &str) {
+        for (name, value) in &mut self.fields {
+            if name == "model" {
+                *value = model.to_owned();
+            }
+        }
+    }
 }
 
 #[async_trait]
@@ -36,30 +81,35 @@ impl ImageProvider for Image2Provider {
         key: &SecretString,
         retry: RetryOptions,
         notes: &mut Vec<String>,
-    ) -> ApiResponse {
+    ) -> ImageResponse {
         let mut body = Map::new();
         body.insert("model".into(), Value::String(request.model.into()));
         body.insert("prompt".into(), Value::String(request.prompt.into()));
         body.insert("n".into(), Value::from(1));
         body.insert("size".into(), Value::String(request.size.into()));
-        body.insert(
-            "response_format".into(),
-            Value::String(request.response_format.into()),
-        );
+        if let Some(response_format) = request.response_format {
+            body.insert(
+                "response_format".into(),
+                Value::String(response_format.into()),
+            );
+        }
         if let Some(quality) = request.quality {
             body.insert("quality".into(), Value::String(quality.into()));
         }
-        self.http
-            .execute(
-                &JsonRequestFactory {
-                    url: self.generations_url.clone(),
-                    body: Value::Object(body),
-                },
-                key,
-                retry,
-                notes,
-            )
-            .await
+        if let Some(output_format) = request.output_format {
+            body.insert("output_format".into(), Value::String(output_format.into()));
+        }
+        self.execute(
+            JsonRequestFactory {
+                url: self.generations_url.clone(),
+                body: Value::Object(body),
+            },
+            request.model,
+            key,
+            retry,
+            notes,
+        )
+        .await
     }
 
     async fn edit(
@@ -68,13 +118,21 @@ impl ImageProvider for Image2Provider {
         key: &SecretString,
         retry: RetryOptions,
         notes: &mut Vec<String>,
-    ) -> ApiResponse {
-        let fields = vec![
+    ) -> ImageResponse {
+        let mut fields = vec![
             ("model".into(), request.model.into()),
             ("prompt".into(), request.prompt.into()),
             ("size".into(), request.size.into()),
-            ("response_format".into(), request.response_format.into()),
         ];
+        if let Some(response_format) = request.response_format {
+            fields.push(("response_format".into(), response_format.into()));
+        }
+        if let Some(quality) = request.quality {
+            fields.push(("quality".into(), quality.into()));
+        }
+        if let Some(output_format) = request.output_format {
+            fields.push(("output_format".into(), output_format.into()));
+        }
         let mut files = request
             .images
             .iter()
@@ -89,18 +147,18 @@ impl ImageProvider for Image2Provider {
                 size_bytes: mask.size_bytes,
             });
         }
-        self.http
-            .execute(
-                &MultipartRequestFactory {
-                    url: self.edits_url.clone(),
-                    fields,
-                    files,
-                },
-                key,
-                retry,
-                notes,
-            )
-            .await
+        self.execute(
+            MultipartRequestFactory {
+                url: self.edits_url.clone(),
+                fields,
+                files,
+            },
+            request.model,
+            key,
+            retry,
+            notes,
+        )
+        .await
     }
 }
 

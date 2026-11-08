@@ -1,6 +1,7 @@
 mod batch;
 mod common;
 mod edit;
+mod edit_session;
 mod generate;
 mod multi_reference;
 mod server_info;
@@ -46,5 +47,44 @@ impl ToolEngine {
             output,
             provider,
         }
+    }
+}
+
+impl ToolEngine {
+    /// Runs before size validation so an unsupported model is reported first.
+    fn model_error(
+        &self,
+        requested: Option<&str>,
+        default: &str,
+        key: Option<&SecretArg>,
+    ) -> Option<String> {
+        let override_key = key.map(|k| {
+            secrecy::SecretString::from(
+                secrecy::ExposeSecret::expose_secret(&k.0).trim().to_owned(),
+            )
+        });
+        let key = override_key
+            .as_ref()
+            .filter(|k| !secrecy::ExposeSecret::expose_secret(*k).trim().is_empty())
+            .unwrap_or(&self.config.api_key);
+        let model = crate::domain::routing::canonical_model(requested.unwrap_or(default));
+        if crate::domain::routing::is_supported_model(model) {
+            None
+        } else {
+            let model = crate::http::response::sanitize_sensitive(
+                model,
+                &[
+                    secrecy::ExposeSecret::expose_secret(key),
+                    secrecy::ExposeSecret::expose_secret(&self.config.api_key),
+                ],
+            );
+            Some(format!(
+                "不支持 model={model:?}；当前可用模型: {}",
+                crate::domain::routing::SUPPORTED_IMAGE_MODELS.join(" / ")
+            ))
+        }
+    }
+    pub async fn catalog_server_info(&self) -> Result<serde_json::Value, ToolFailure> {
+        self.server_info()
     }
 }

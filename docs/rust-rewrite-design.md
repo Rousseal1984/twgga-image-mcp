@@ -1,5 +1,7 @@
 # Rust 渐进式重写设计
 
+本文保留初次重写设计历史；当前 main 已退出 Python reference 源码和差分依赖，实施边界以 [Rust-only 开发](rust-only-development.md) 为准。
+
 状态：实现前设计冻结（2026-08-23）  
 基线 HEAD：`578b32ace77bbc732462b4d6483f2259969668ef`  
 目标协议 SDK：官方 `rmcp 3.1.4`（crates.io 稳定版，MSRV 1.88）  
@@ -49,7 +51,7 @@ reference；编译好的 Rust binary 只能通过显式选项配置。
 `domain` 是纯逻辑深模块，`InputStore` 是 capability-based 文件系统深模块：
 
 - `Size`：格式、边长、16 对齐、像素总数、长宽比、size tier；
-- `ModelRoute`：精确 allowlist、Grok 公共拒绝语义、≥1600 自动高质量路由；
+- `ModelRoute`：手动 Image2 目录与不支持模型的请求前拒绝、Flare/Sunburst 旧名称兼容、明确模型拒绝后的后缀补试候选、≥1600 自动高质量路由；
 - `Basename`：字符集、100 字符、路径分量、前导点和 `..`；
 - `ValidatedImage`：保持已打开文件 handle、真实格式/MIME/尺寸/alpha、长度。
 
@@ -103,7 +105,7 @@ Provider seam 表达领域动作，而不是通用 fetch：
 - `edit(request, images, optional_mask)`。
 
 当前只有 `Image2Provider` 生产 adapter；本地 mock HTTP server 是第二个测试 adapter。
-Grok 不可达代码不搬运，但 trait 保留未来重新增加 provider 的位置。Image2 provider 永不产生
+仅维护 Image2 provider。Image2 provider 永不产生
 `chat/completions` request，单图 edit 与多图 reference 都只产生 `/v1/images/edits`。
 
 ### 3.7 `ToolService`

@@ -31,6 +31,7 @@ Thumbs.db
 
 # 输出图片（不要把生成结果传到仓库）
 out/
+.twgga-sessions/
 *.png
 *.jpg
 *.jpeg

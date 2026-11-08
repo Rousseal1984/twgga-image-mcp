@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::{config::Config, fs::output_store::SavedImage};
 
 #[derive(Clone)]
-pub struct SecretArg(SecretString);
+pub struct SecretArg(pub(crate) SecretString);
 
 impl SecretArg {
     pub fn into_inner(self) -> SecretString {
@@ -46,9 +46,11 @@ pub fn resolve_key(
         }
     }
     if config.api_key.expose_secret().trim().is_empty() {
-        return Err(ToolFailure(
-            "未配置 API key。请设置 TWGGA_API_KEY 环境变量，或在调用时传 api_key 参数。".into(),
-        ));
+        return Err(ToolFailure(format!(
+            "API key 不可用（{:?}）。{} 也可设置 TWGGA_API_KEY 或在调用时传 api_key。",
+            config.credential_status,
+            crate::credentials::CREDENTIAL_RECOVERY
+        )));
     }
     Ok(config.api_key.clone())
 }
@@ -73,6 +75,10 @@ pub fn saved_value(saved: &SavedImage, index: Option<usize>) -> Result<Value, To
         .ok_or_else(|| ToolFailure("输出路径不是合法 Unicode，无法无损写入 MCP JSON".into()))?;
     value.insert("path".into(), Value::String(path));
     value.insert("size_bytes".into(), Value::from(saved.size_bytes));
+    value.insert("format".into(), Value::String(saved.format.into()));
+    if let Some(frame_count) = saved.frame_count {
+        value.insert("frame_count".into(), Value::from(frame_count));
+    }
     value.insert(
         "actual_size".into(),
         Value::String(format!("{}x{}", saved.actual_size.0, saved.actual_size.1)),

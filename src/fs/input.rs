@@ -10,7 +10,7 @@ use image::ImageFormat;
 
 use crate::config::{AppPaths, PathError, PathPolicy};
 
-use super::image::{format_name, inspect_image_file};
+use super::image::{format_name, has_gif_header, inspect_image_file};
 
 pub const MAX_INPUT_FILE_BYTES: u64 = 4 * 1024 * 1024;
 pub const MAX_TOTAL_INPUT_BYTES: u64 = 8 * 1024 * 1024;
@@ -54,7 +54,7 @@ pub fn validate_input_image(
         } else if let Some(root) = policy.input_root() {
             format!(
                 "{label} 必须在 TWGGA_INPUT_ROOT={} 之下（已启用输入路径白名单）；收到 {}",
-                crate::fs::display::display_path_lossy(root),
+                root.display(),
                 python_string_repr(path)
             )
         } else {
@@ -66,10 +66,7 @@ pub fn validate_input_image(
         .metadata()
         .map_err(|error| format!("{label} 无法 stat: {error}"))?;
     if !metadata.is_file() {
-        return Err(format!(
-            "{label} 不存在: {}",
-            crate::fs::display::display_path_lossy(&requested)
-        ));
+        return Err(format!("{label} 不存在: {}", requested.display()));
     }
     let size_bytes = metadata.len();
     if size_bytes > MAX_INPUT_FILE_BYTES {
@@ -93,15 +90,15 @@ pub fn validate_input_image(
         .as_file_mut()
         .flush()
         .map_err(|error| format!("{label} 安全输入快照 flush 失败: {error}"))?;
+    if has_gif_header(snapshot.as_file()) {
+        return Err(unsupported_format_error(label, ImageFormat::Gif));
+    }
     let info = inspect_image_file(snapshot.as_file(), size_bytes, label)?;
     if !matches!(
         info.format,
         ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP
     ) {
-        return Err(format!(
-            "{label} 格式 {} 暂不受支持；请转换为 PNG、JPEG 或 WebP",
-            format_name(info.format)
-        ));
+        return Err(unsupported_format_error(label, info.format));
     }
     if info.dimensions.0 < 16 || info.dimensions.1 < 16 {
         return Err(format!(
@@ -158,6 +155,13 @@ pub fn validate_mask(mask: &ValidatedImage, image: &ValidatedImage) -> Result<()
     Ok(())
 }
 
+fn unsupported_format_error(label: &str, format: ImageFormat) -> String {
+    format!(
+        "{label} 格式 {} 暂不受支持；请转换为 PNG、JPEG 或 WebP",
+        format_name(format)
+    )
+}
+
 fn open_input_file(
     policy: &PathPolicy,
     requested: &Path,
@@ -166,12 +170,8 @@ fn open_input_file(
 ) -> Result<(PathBuf, File), String> {
     if let Some(root) = policy.input_root() {
         let canonical_root = root.to_path_buf();
-        let canonical_target = std::fs::canonicalize(requested).map_err(|_| {
-            format!(
-                "{label} 不存在: {}",
-                crate::fs::display::display_path_lossy(requested)
-            )
-        })?;
+        let canonical_target = std::fs::canonicalize(requested)
+            .map_err(|_| format!("{label} 不存在: {}", requested.display()))?;
         let relative = canonical_target
             .strip_prefix(&canonical_root)
             .map_err(|_| input_root_error(label, &canonical_root, raw))?;
@@ -179,7 +179,7 @@ fn open_input_file(
             Dir::open_ambient_dir(&canonical_root, ambient_authority()).map_err(|error| {
                 format!(
                     "无法打开 TWGGA_INPUT_ROOT={}: {error}",
-                    crate::fs::display::display_path_lossy(&canonical_root)
+                    canonical_root.display()
                 )
             })?;
         let file = root_dir
@@ -190,10 +190,7 @@ fn open_input_file(
 
     let file = File::open(requested).map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
-            format!(
-                "{label} 不存在: {}",
-                crate::fs::display::display_path_lossy(requested)
-            )
+            format!("{label} 不存在: {}", requested.display())
         } else {
             format!("{label} 读取失败: {error}")
         }
@@ -204,7 +201,7 @@ fn open_input_file(
 fn input_root_error(label: &str, root: &Path, raw: &str) -> String {
     format!(
         "{label} 必须在 TWGGA_INPUT_ROOT={} 之下（已启用输入路径白名单）；收到 {}",
-        crate::fs::display::display_path_lossy(root),
+        root.display(),
         python_string_repr(raw)
     )
 }

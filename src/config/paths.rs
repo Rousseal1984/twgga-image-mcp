@@ -31,32 +31,30 @@ impl PathSource {
         }
     }
 
-    /// 解析家目录，优先看环境变量，与 Python 侧保持一致。
-    ///
-    /// `dirs::home_dir()` 在 Windows 上走的是 Win32 的 SHGetKnownFolderPath，
-    /// 完全不看环境变量；而 Python 的 `expanduser("~")` 在 Windows 上读
-    /// `USERPROFILE`。两者因此会解析到不同的目录 —— Python 与 Rust 本该共用
-    /// 同一把跨进程锁、写同一份客户端配置，在 Windows 上却各写各的。
-    /// 这里先读环境变量再回落到 dirs，把两边拉回一致，也让把配置挪到别处成为可能。
-    fn resolve_home() -> Option<PathBuf> {
-        for key in ["TWGGA_HOME", "USERPROFILE", "HOME"] {
-            if let Some(value) = std::env::var_os(key) {
-                let path = PathBuf::from(value);
-                if !path.as_os_str().is_empty() {
-                    return Some(path);
-                }
-            }
-        }
-        dirs::home_dir()
-    }
-
     pub fn capture() -> Result<Self, PathError> {
-        let home = Self::resolve_home().ok_or(PathError::HomeUnavailable)?;
+        // Native Windows known-folder APIs ignore HOME/LOCALAPPDATA overrides.
+        // Explicit offline contract mode uses the harness's isolated directories.
+        let contract = std::env::var("TWGGA_CONTRACT_TESTING").as_deref() == Ok("1");
+        let home = if contract {
+            std::env::var_os("HOME")
+                .map(PathBuf::from)
+                .or_else(dirs::home_dir)
+        } else {
+            dirs::home_dir()
+        }
+        .ok_or(PathError::HomeUnavailable)?;
         let startup_cwd = std::env::current_dir()
             .map_err(|error| PathError::CurrentDirectory(error.to_string()))?;
         let executable = std::env::current_exe()
             .map_err(|error| PathError::CurrentExecutable(error.to_string()))?;
-        let data_local = dirs::data_local_dir().unwrap_or_else(|| home.join(".local/share"));
+        let data_local = if contract {
+            std::env::var_os("LOCALAPPDATA")
+                .map(PathBuf::from)
+                .or_else(dirs::data_local_dir)
+        } else {
+            dirs::data_local_dir()
+        }
+        .unwrap_or_else(|| home.join(".local/share"));
         Ok(Self::new(home, startup_cwd, executable, data_local))
     }
 }

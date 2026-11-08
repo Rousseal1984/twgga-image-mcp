@@ -1,10 +1,7 @@
 use futures_util::{StreamExt, stream};
 use serde_json::{Map, Value};
 
-use crate::domain::{
-    routing::{is_large_tier, model_error, resolve_model},
-    size::{size_tier, validate_size},
-};
+use crate::domain::{routing::ModelRoute, size::validate_size};
 
 use super::{
     BatchParams, EditParams, SecretArg, ToolEngine, ToolFailure,
@@ -26,7 +23,11 @@ impl ToolEngine {
                 total,
             ));
         }
-        if let Some(error) = model_error(params.model.as_deref(), &self.config.default_model) {
+        if let Some(error) = self.model_error(
+            params.model.as_deref(),
+            &self.config.default_edit_model,
+            params.api_key.as_ref(),
+        ) {
             return Ok(batch_validation_error(error, total));
         }
         let (cleaned_size, size_error) = validate_size(Some(&params.size), false);
@@ -36,6 +37,15 @@ impl ToolEngine {
                 total,
             ));
         };
+        let (route, mut notes) = ModelRoute::resolve(
+            params.model.as_deref(),
+            &self.config.default_edit_model,
+            &size,
+        );
+        let quality = match route.validate_quality(params.quality.as_deref()) {
+            Ok(quality) => quality,
+            Err(error) => return Ok(batch_validation_error(error, total)),
+        };
         let location = match self
             .output_store
             .resolve_save_dir(params.save_dir.as_deref())
@@ -43,16 +53,9 @@ impl ToolEngine {
             Ok(location) => location,
             Err(error) => return Ok(batch_validation_error(error, total)),
         };
-        let (effective_model, notes) =
-            resolve_model(params.model.as_deref(), &self.config.default_model, &size);
-        // 大尺寸串行。参考实现是靠「≥2K 自动切到另一条队列、而那条队列串行」间接做到的；
-        // 本站只有一条线路，那条间接链路不存在，因此直接按尺寸判断，保住同一个意图。
-        // 一张 ≥2K 的图会长时间占用处理资源，而可并行的容量有限。
-        let concurrency = if is_large_tier(size_tier(&size)) {
-            1
-        } else {
-            5
-        };
+        // Serial routes keep a 1.5s gap between images, as server_info documents.
+        let concurrency = route.parallel_limit();
+        let effective_model = route.model().to_owned();
         let output_dir = location
             .absolute
             .to_str()
@@ -75,6 +78,7 @@ impl ToolEngine {
                         prompt.clone(),
                         size.clone(),
                         effective_model.clone(),
+                        quality.clone(),
                         output_dir.clone(),
                         key.clone(),
                     )
@@ -89,11 +93,12 @@ impl ToolEngine {
                     let prompt = prompt.clone();
                     let size = size.clone();
                     let model = effective_model.clone();
+                    let quality = quality.clone();
                     let output_dir = output_dir.clone();
                     let key = key.clone();
                     async move {
                         engine
-                            .batch_one(index, input, prompt, size, model, output_dir, key)
+                            .batch_one(index, input, prompt, size, model, quality, output_dir, key)
                             .await
                     }
                 })
@@ -106,9 +111,27 @@ impl ToolEngine {
             .iter()
             .filter(|(_, result)| result.get("ok").and_then(Value::as_bool) == Some(true))
             .count();
+        let actual_model = results
+            .iter()
+            .find(|(_, result)| result["ok"] == true)
+            .or_else(|| results.first())
+            .and_then(|(_, result)| result["model"].as_str())
+            .unwrap_or(&effective_model)
+            .to_owned();
+        let used_fallback = results
+            .iter()
+            .any(|(_, result)| result["used_fallback"] == true);
+        if results.iter().any(|(_, result)| {
+            result["model"]
+                .as_str()
+                .is_some_and(|model| model != actual_model)
+        }) {
+            notes.push("批量结果使用了不同兼容 ID；各图片的实际模型见 results[].model".into());
+        }
         let mut output = Map::new();
         output.insert("ok".into(), Value::Bool(succeeded > 0));
-        output.insert("model".into(), Value::String(effective_model));
+        output.insert("model".into(), Value::String(actual_model));
+        output.insert("used_fallback".into(), Value::Bool(used_fallback));
         output.insert("size".into(), Value::String(size));
         output.insert("concurrency".into(), Value::from(concurrency));
         output.insert("total".into(), Value::from(total));
@@ -133,19 +156,25 @@ impl ToolEngine {
         prompt: String,
         size: String,
         model: String,
+        quality: Option<String>,
         output_dir: String,
         api_key: Option<SecretArg>,
     ) -> (usize, Value) {
         let result = self
             .image_edit(EditParams {
                 prompt,
-                image_path: input.clone(),
+                image_path: Some(input.clone()),
                 mask_path: None,
-                size,
+                size: Some(size),
                 model: Some(model),
+                quality,
+                output_format: None,
                 save_dir: Some(output_dir),
                 basename: Some(format!("{}_{}", default_basename("batch"), index + 1)),
                 api_key,
+                session_id: None,
+                parent_revision: None,
+                context: Default::default(),
             })
             .await;
         let mut value = match result {
@@ -215,35 +244,41 @@ mod tests {
     impl ImageProvider for FakeProvider {
         async fn generate(
             &self,
-            _request: GenerateRequest<'_>,
+            request: GenerateRequest<'_>,
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
-            ApiResponse {
-                status: 500,
-                headers: reqwest::header::HeaderMap::new(),
-                body: vec![],
-            }
+        ) -> crate::providers::ImageResponse {
+            crate::providers::ImageResponse::new(
+                ApiResponse {
+                    status: 500,
+                    headers: reqwest::header::HeaderMap::new(),
+                    body: vec![],
+                },
+                request.model,
+            )
         }
 
         async fn edit(
             &self,
-            _request: EditRequest<'_>,
+            request: EditRequest<'_>,
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
+        ) -> crate::providers::ImageResponse {
             self.starts.lock().await.push(Instant::now());
             let active = self.active.fetch_add(1, Ordering::SeqCst) + 1;
             self.max_active.fetch_max(active, Ordering::SeqCst);
             tokio::time::sleep(std::time::Duration::from_millis(40)).await;
             self.active.fetch_sub(1, Ordering::SeqCst);
-            ApiResponse {
-                status: 200,
-                headers: reqwest::header::HeaderMap::new(),
-                body: self.body.clone(),
-            }
+            crate::providers::ImageResponse::new(
+                ApiResponse {
+                    status: 200,
+                    headers: reqwest::header::HeaderMap::new(),
+                    body: self.body.clone(),
+                },
+                request.model,
+            )
         }
     }
 
@@ -281,6 +316,7 @@ mod tests {
                 input.to_string_lossy().into_owned(),
             ),
             ("TWGGA_API_KEY".into(), "sk-test".into()),
+            ("TWGGA_BASEURL".into(), "http://127.0.0.1:9".into()),
         ]);
         let config =
             Arc::new(Config::from_map(&environment).unwrap_or_else(|error| panic!("{error}")));
@@ -317,7 +353,8 @@ mod tests {
                 prompt: "sketch".into(),
                 image_paths: paths,
                 size: "1024x1024".into(),
-                model: None,
+                model: Some("gpt-image-2".into()),
+                quality: None,
                 save_dir: None,
                 api_key: None,
             })
@@ -330,25 +367,28 @@ mod tests {
         assert_eq!(result["results"][5]["index"], 6);
     }
 
+    // 本站只有一条线路，不存在上游那种「质量线路一律串行」；≥2K 的串行只看尺寸。
+    // 一张 ≥2K 的图会长时间占用处理资源，而可并行的容量有限。
     #[tokio::test]
-    // 串行的判据从「是不是付费线路」改成「是不是大尺寸」，因此这里必须用 2K：
-    // 1K 批量按设计就是 5 并发，拿 1K 测串行等于测了个必然通过的假前提。
-    async fn large_size_batch_is_serial_with_inter_request_gap() {
+    async fn large_standard_batch_is_serial_with_inter_request_gap() {
         let (_temp, engine, provider, paths) = fixture();
         let result = engine
             .image_batch_edit(BatchParams {
-                prompt: "enhance".into(),
+                prompt: "upscale".into(),
                 image_paths: paths[..2].to_vec(),
                 size: "2048x1152".into(),
                 model: Some("gpt-image-2".into()),
+                quality: None,
                 save_dir: None,
                 api_key: None,
             })
             .await
             .unwrap_or_else(|error| panic!("{error}"));
-        assert_eq!(result["concurrency"], 1, "{result}");
+        assert_eq!(result["succeeded"], 2, "{result}");
+        assert_eq!(result["model"], "gpt-image-2");
+        assert_eq!(result["concurrency"], 1);
+        assert_eq!(provider.max_active.load(Ordering::SeqCst), 1);
         let starts = provider.starts.lock().await;
-        assert_eq!(starts.len(), 2);
         assert!(starts[1].duration_since(starts[0]) >= std::time::Duration::from_secs_f64(1.45));
     }
 }

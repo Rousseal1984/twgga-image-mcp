@@ -1,0 +1,546 @@
+{
+  "id": 2,
+  "jsonrpc": "2.0",
+  "result": {
+    "tools": [
+      {
+        "description": "Create one NEW, independent image task from text with gpt-image-2, the only image model on this service. ALWAYS pass session_id=\"new\" on its first generation and save the returned session.id for later edits. A new subject or another independent picture in the same chat MUST start a new session; do not copy prior-image constraints. Example: cat parachuting → new A; replace its parachute → image_edit(A); generate a beach portrait → new B; return to the cat → image_edit(A). Do not show IDs to the user. Defaults: n=1; session mode requires n=1. quality: auto/low/medium/high. output_format is optional (png/jpeg/webp). SIZE: on this service size does not set output pixels; outputs measure about 1.57 megapixels whatever size asks (3840x2160, 2048x1152 and 1536x1024 all returned 1254x1254). Put the aspect ratio in the prompt instead (\"16:9 wide landscape\" gave 1672x941, \"9:16 vertical poster\" gave 941x1672). Never promise 4K/2K or exact pixels to the user; report saved[].actual_size. size must still be valid 16-aligned WxH; ≥2K sizes only force n=1 and run serially. Save paths must stay within TWGGA_SAVE_DIR_ROOT; basename is a filename stem. Returns saved[] and session{id,revision,context}. Explicit existing session_id remains supported for continuing an image, but prefer image_edit for modifications.",
+        "inputSchema": {
+          "properties": {
+            "api_key": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Api Key"
+            },
+            "basename": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Basename"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Model"
+            },
+            "n": {
+              "default": 1,
+              "title": "N",
+              "type": "integer"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Quality",
+              "description": "可选 auto / low / medium / high；省略时由服务端决定。已有会话省略时继承所选版本。"
+            },
+            "output_format": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Output Format",
+              "description": "可选输出格式：png / jpeg / webp。省略时不发送此字段。实际格式以 saved[].format 为准。"
+            },
+            "save_dir": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Save Dir"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Size",
+              "description": "已有会话省略时继承所选版本；首次生成省略时从 prompt 推断。本站输出像素不随 size 变化（实测约 157 万像素），画幅请写进 prompt。"
+            },
+            "session_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(new|edit_[0-9a-f]{32})$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Session ID",
+              "description": "传 new 创建持久图片会话；后续传返回的 session.id，自动使用所选版本图片继续生成。省略时保持单次生成。会话模式仅支持 n=1。"
+            },
+            "parent_revision": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Parent Revision",
+              "description": "已有会话的起始版本；省略使用最新版本。指定旧版本可建立新分支。"
+            },
+            "context": {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxProperties": 32,
+              "default": {},
+              "title": "Context",
+              "description": "会话中的有效编辑约束。按键继承和更新：字符串覆盖对应键，null 移除约束；合计最多 8192 字符。本轮 prompt 优先于历史与约束；变更长期要求时同时更新对应键。"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "image_generateArguments",
+          "type": "object"
+        },
+        "name": "image_generate",
+        "outputSchema": {
+          "additionalProperties": true,
+          "title": "image_generateDictOutput",
+          "type": "object"
+        }
+      },
+      {
+        "description": "Modify an EXISTING image task with gpt-image-2. If the image already has a returned session.id, ALWAYS reuse that ID, including when returning to an earlier picture after creating another image. The selected session supplies the previous output image, successful branch history and constraints; image_path can be omitted. For an external image without a session, pass image_path and session_id=\"new\". Optional parent_revision selects a branch; defaults use latest successful revision. context strings replace named constraints; null removes them. Update the constraint key when changing a lasting attribute. Current prompt wins; failures do not advance revisions. Omitted model/size/quality inherit. Mask is PNG, input-sized: transparent pixels are edited, opaque retained; mask applies only this turn. Output pixels do not follow size (about 1.57 megapixels); state the wanted aspect ratio in the prompt and report saved.actual_size. Input formats/roots/4MiB file limit remain enforced. Returns saved{} and session. IDs are internal; ask only if the referenced image is ambiguous.",
+        "inputSchema": {
+          "properties": {
+            "api_key": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Api Key"
+            },
+            "basename": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Basename"
+            },
+            "image_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Image Path",
+              "description": "单次编辑或新会话必填；已有会话省略时使用所选版本的输出。显式提供时必须匹配所选版本。"
+            },
+            "mask_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Mask Path"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Model"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Quality",
+              "description": "可选 auto / low / medium / high；省略时由服务端决定。已有会话省略时继承所选版本。"
+            },
+            "output_format": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Output Format",
+              "description": "可选输出格式：png / jpeg / webp。省略时不发送此字段。实际格式以 saved[].format 为准。"
+            },
+            "save_dir": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Save Dir"
+            },
+            "size": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Size",
+              "description": "已有会话省略时继承所选版本；其他调用默认 1024x1024。本站输出像素不随 size 变化（实测约 157 万像素），画幅请写进 prompt。"
+            },
+            "session_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(new|edit_[0-9a-f]{32})$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Session ID",
+              "description": "传 new 开始持久编辑会话；后续传返回的 session.id。省略时保持单次编辑。"
+            },
+            "parent_revision": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 128
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Parent Revision",
+              "description": "已有会话的起始版本；省略使用最新版本。指定旧版本可建立新分支。"
+            },
+            "context": {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2048
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maxProperties": 32,
+              "default": {},
+              "title": "Context",
+              "description": "会话中的有效编辑约束。按键继承和更新：字符串覆盖对应键，null 移除约束；合计最多 8192 字符。本轮 prompt 优先于历史与约束；变更长期要求时同时更新对应键。"
+            }
+          },
+          "required": [
+            "prompt"
+          ],
+          "title": "image_editArguments",
+          "type": "object"
+        },
+        "name": "image_edit",
+        "outputSchema": {
+          "additionalProperties": true,
+          "title": "image_editDictOutput",
+          "type": "object"
+        }
+      },
+      {
+        "description": "Apply one instruction independently to 2-10 images (N inputs → N outputs) with gpt-image-2. This is not a joint multi-reference composition. 1K batches run at most 5 concurrent requests; 2K/4K sizes run one at a time with a 1.5s gap. Output pixels do not follow size; report each saved.actual_size. Each input is PNG/JPEG/WebP and ≤4MiB; path and output-root checks apply. For successive modifications to a single remembered picture, use image_edit with its session.id instead. Returns per-image saved/error results.",
+        "inputSchema": {
+          "properties": {
+            "api_key": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Api Key"
+            },
+            "image_paths": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Image Paths",
+              "type": "array"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Model"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Quality",
+              "description": "可选 auto / low / medium / high；省略时由服务端决定。"
+            },
+            "save_dir": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Save Dir"
+            },
+            "size": {
+              "default": "1024x1024",
+              "title": "Size",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_paths"
+          ],
+          "title": "image_batch_editArguments",
+          "type": "object"
+        },
+        "name": "image_batch_edit",
+        "outputSchema": {
+          "additionalProperties": true,
+          "title": "image_batch_editDictOutput",
+          "type": "object"
+        }
+      },
+      {
+        "description": "Combine 2-10 reference images into ONE new image (N inputs → 1 output) with gpt-image-2. Use for shared style, subject or composition references, not independent batch editing. Inputs PNG/JPEG/WebP, each ≤4MiB and total ≤8MiB. Requests use edits/image[]; output pixels do not follow size, so state the aspect ratio in the prompt and report saved.actual_size. Output paths stay inside TWGGA_SAVE_DIR_ROOT. This tool does not maintain an editing session; to refine its output, use image_edit(image_path=saved.path, session_id=\"new\").",
+        "inputSchema": {
+          "properties": {
+            "api_key": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Api Key"
+            },
+            "basename": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Basename"
+            },
+            "image_paths": {
+              "items": {
+                "type": "string"
+              },
+              "title": "Image Paths",
+              "type": "array"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Model"
+            },
+            "prompt": {
+              "title": "Prompt",
+              "type": "string"
+            },
+            "quality": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Quality",
+              "description": "可选 auto / low / medium / high；省略时由服务端决定。"
+            },
+            "save_dir": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Save Dir"
+            },
+            "size": {
+              "default": "1024x1024",
+              "title": "Size",
+              "type": "string"
+            }
+          },
+          "required": [
+            "prompt",
+            "image_paths"
+          ],
+          "title": "image_multi_referenceArguments",
+          "type": "object"
+        },
+        "name": "image_multi_reference",
+        "outputSchema": {
+          "additionalProperties": true,
+          "title": "image_multi_referenceDictOutput",
+          "type": "object"
+        }
+      },
+      {
+        "description": "Read runtime configuration, the supported model, sizes, retry/concurrency policies and path/image limits. No image request or charge. The model/parameter allowlists do not guarantee that the current API key is authorized. Dated observations are scoped to their stated endpoint/model. Credentials are never returned.",
+        "inputSchema": {
+          "properties": {},
+          "title": "server_infoArguments",
+          "type": "object"
+        },
+        "name": "server_info",
+        "outputSchema": {
+          "additionalProperties": true,
+          "title": "server_infoDictOutput",
+          "type": "object"
+        }
+      }
+    ]
+  }
+}

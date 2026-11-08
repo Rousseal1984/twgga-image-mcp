@@ -1,5 +1,19 @@
 # Rust 重写安全评审
 
+## v0.5.2 依赖修补（2026-10-23）
+
+候选 `331e938` 的 CI 检出 `RUSTSEC-2026-0385`：`ctutils 0.4.2` 的掩码生成及
+32 位目标上的 `u128` 比较可能产生依赖秘密值的分支。锁文件将该库单独升级至 0.4.4，
+其余依赖版本不变；[上游发布说明](https://github.com/RustCrypto/utils/pull/1569)记录了
+对应常量时间代码生成修复与验证。
+
+该依赖经 `digest` → `hmac`/`hkdf` → `secret-service` → `keyring` 进入产品，工程工具的
+`sha2` 也使用它。保留此前 TLS 与 rand/chacha20 安全更新，不忽略此 advisory，不修改
+CI 审计门槛。下文为历史安全评审及其当时的验证结果；本次补丁仍须通过新 revision 的
+安全审计和四平台 CI。
+
+## 原始重写评审
+
 评审日期：2026-08-23  
 范围：Rust `src/`、迁移期 Python 安全补丁、安装器、STDIO/HTTP/文件路径 contract tests  
 结论：本机自动化安全检查通过；v0.3.0 tag/release 必须等待跨平台 CI 真实通过，不能只凭本机
@@ -29,7 +43,7 @@
   `base_url`。base URL 不可能在一次 tool call 中变化。
 - Rust server 进一步拒绝非 HTTPS 的远端 base URL；HTTP 只允许 localhost、127.0.0.1、
   `::1` 或 `*.localhost`，以支持离线 mock/本地代理。
-- `TWGGA_API_KEY`、legacy Grok key 和 tool-level key override 进入 `secrecy::SecretString`；
+- `TWGGA_API_KEY` 和 tool-level key override 进入 `secrecy::SecretString`；
   `Debug` 固定显示 `[REDACTED]`。
 - `Authorization` 只在 request 构造时从 secret wrapper 生成。错误清洗会替换当前 key、Bearer
   token 和长度 ≥64 的 base64-like run。
@@ -133,7 +147,7 @@ proxy 或使用可信、可审计的代理。
 - API timeout、disconnect、408/429/500/524、Retry-After 两种格式；
 - stdout JSON-only 与 key/base64 stderr 扫描；
 - `cargo clippy --lib --bins ... -D clippy::unwrap_used -D clippy::expect_used -D clippy::panic`；
-- `cargo audit`：加载 1,225 条 advisory，扫描 279 个 lockfile dependency，退出码 0。
+- `cargo audit`：加载 1,348 条 advisory，扫描 352 个 lockfile dependency，0 漏洞、3 条 unmaintained 警告（`zbus_names`/`zvariant`/`zvariant_derive`，经 `keyring` → `secret-service` → `zbus` 引入，上游 6.0.0 已把这些模块并入 `zbus`），退出码 0。
 
 crate root 和 binary root 都有 `#![forbid(unsafe_code)]`；生产 `src/` 的严格 Clippy 检查没有
 `unwrap()`、`expect()` 或 `panic!()`。

@@ -4,365 +4,191 @@
 
 # TWGGA 画图 MCP
 
-把 [TWGGA](https://twgga.work) 的图像接口包装成 MCP server，让 Claude Code / Codex / Cursor 等 MCP 客户端直接生图、改图、批处理、多图参考。
+把 [TWGGA](https://twgga.work) 的图像接口接入 Claude Code、Claude Desktop、Codex、Cursor 等 MCP 客户端，支持生成图片、连续编辑、批量编辑和多图参考。
 
-当前仅支持 `gpt-image-2`，`TWGGA_API_KEY` 必须能看到该模型。
+当前仅支持 `gpt-image-2`，你的 TWGGA API Key 需要能调用该模型。
 
-> **关于尺寸**：`size` 只是建议，本站不保证精确像素——请求 1024×1024 实测会回 1122×1402。返回结果里的 `size_honored` 与 `saved.actual_size` 是准的，请以它们为准；需要精确构图时把画幅要求写进 prompt。
-Grok 生图渠道暂时关闭，待服务器支持后再启用；即使配置旧的 Grok 环境变量，安装器也不会写入，工具调用会在发出请求前拒绝 Grok 模型。
+> **关于尺寸**：`size` 不决定输出像素。本站实测输出约 157 万像素，与请求的尺寸无关：请求 3840x2160、2048x1152、1536x1024 都返回 1254×1254。想要横图或竖图，把画幅写进 prompt，例如写「16:9 宽幅横构图」得到 1672×941。实际尺寸一律以返回的 `saved.actual_size` 为准，不要向用户承诺 2K/4K。
+
+[连续编辑](#连续编辑) · [功能](#功能) · [安装](#安装) · [API Key 保存在哪](#api-key-保存在哪) · [升级](#升级) · [配置](#配置) · [v0.5.0 更新说明](docs/releases/v0.5.0.md)
+
+---
+
+## 连续编辑
+
+MCP 会把每次成功的图片版本、编辑要求和有效约束保存在你的电脑上。沿用同一个会话 ID，就能在上一版图片上继续改；不同主题用各自的会话，互不干扰。
+
+| 你说的话 | 图片会话 | MCP 的处理 |
+| --- | --- | --- |
+| 「生成一只小猫跳伞。」 | A · 第 1 版 | 新建会话，保存首张图和描述 |
+| 「给它换一种飞行装备。」 | A · 第 2 版 | 上传 A 的上一版图片，带上主体要求和有效约束 |
+| 「另外生成一张海景人像。」 | B · 第 1 版 | 新建 B，使用这个主题自己的图片与约束 |
+| 「回到刚才的小猫，把背景改成日落。」 | A · 第 3 版 | 回到 A，从 A 的成功历史继续改 |
+
+1. 首次生成或编辑时传 `session_id="new"`，客户端保存返回的 `session.id`。会话模式要求 `n=1`。
+2. 继续修改时传原 ID 和本轮指令。省略 `model`、`size`、`quality` 时继承所选版本；MCP 自动上传该版本图片。
+3. 新主题用 `"new"`，回到旧图用原 ID。指定 `parent_revision` 可以从旧版本另开分支。
+4. 会话保存在运行 MCP 的电脑上，重启后可以继续。失败的调用不会推进版本。
+
+选哪个会话由客户端里的 AI 决定，MCP 按传入的 ID 读取记录，不会自动拿到完整聊天记录。用法细节见[连续编辑指南](docs/multi-turn-editing.md)，占用与清理见[会话存储说明](docs/session-storage.md)。
 
 ---
 
 ## 功能
 
-| Tool | 说明 |
+| 工具 | 说明 |
 |---|---|
-| `image_generate` | 文生图。TWGGA image2 支持 1K / 2K / 4K |
-| `image_edit` | 单图参考/编辑。走 `/v1/images/edits`，支持 1K / 2K / 4K |
-| `image_batch_edit` | 多张图逐张同指令处理；1K 并发，2K / 4K 串行 |
-| `image_multi_reference` | 2-10 张参考图融合成 1 张新图，支持 1K / 2K / 4K |
-| `server_info` | 查看 base URL、模型、size 规则、重试策略、安全约束 |
+| `image_generate` | 根据文字生成图片；传入已有会话 ID 时继续编辑 |
+| `image_edit` | 根据一张参考图和指令编辑图片，支持蒙版和连续编辑 |
+| `image_batch_edit` | 对 2 到 10 张图片分别应用同一条指令；1K 最多 5 并发，2K/4K 逐张串行 |
+| `image_multi_reference` | 同时参考 2 到 10 张图片生成一张新图 |
+| `server_info` | 查看版本、接口地址、模型、尺寸规则、重试策略、安全限制和 Key 状态 |
 
-第一次使用前，让 LLM 调一次 `server_info`，可以看到当前运行时配置和可用能力。
+第一次使用前，让客户端调用一次 `server_info`，确认当前配置。各客户端的用法、工具选择和故障排查见 [MCP 使用教程](docs/MCP使用教程.md)。
 
----
-
-## 使用教程
-
-面向 Cursor / Claude Code / Codex 用户的完整 MCP 使用指南见 [docs/MCP使用教程.md](docs/MCP使用教程.md)，
-涵盖工具选型、尺寸规则、环境变量与故障排查（含 Clash/Surge fake-ip 落盘问题）。
+- 生成与编辑统一走 `/v1/images/generations` 与 `/v1/images/edits`。
+- `quality` 可选 `auto` / `low` / `medium` / `high`。
+- `output_format` 可选 `png` / `jpeg` / `webp`，省略时不发送；实际格式以 `saved[].format` 为准。
+- 输入图仅支持 PNG、JPEG、WebP，单张不超过 4MB，多图参考合计不超过 8MB。
 
 ---
-
-## 当前模型范围
-
-所有工具与压测脚本仅接受 `gpt-image-2`。本站只有这一条生图线路，不按尺寸做模型切换；2K/4K 照常请求，但同样不保证精确像素。Grok 相关实现保留为休眠代码，服务器支持后可重新开放。
-
----
-
-> **线路说明**：生成与编辑统一走 Images API（`/v1/images/generations` 与 `/v1/images/edits`）。本站只有一条生图线路，不做按尺寸的模型切换；≥2K 仍然串行并加跨进程锁，因为一张大图的处理时间相当长。保留对 `HTTP 400 + Too Many Requests` 与 `data:image/...;base64,...` 返回的兼容处理。
-
-> **Windows 中文提示词**：MCP 会以原生 UTF-8 JSON 发送中文。自行编写 PowerShell 测试脚本时，不要把含中文的 here-string 直接通过管道喂给 `python -`；Windows PowerShell 的 `$OutputEncoding` 可能是 ASCII，导致中文在进入 MCP 前已变成 `?`。请将脚本保存为 UTF-8 文件后执行，或先设置 `$OutputEncoding = [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()`。
 
 ## 安装
 
-从 v0.3.0 起，`main` 与推荐安装入口是 Rust 原生单文件 MCP server：
+本项目是单文件程序，不需要 Python 或其他运行环境。无参数运行即启动 STDIO MCP 服务。
 
-- 默认 STDIO serve，无参数即可运行；
-- 运行时不需要 Python、pip、httpx 或 Pillow；
-- 提供 `install/reset/doctor/version`；
-- Python v0.2.0 reference 永久保留在
-  [`python-reference`](https://github.com/Rousseal1984/twgga-image-mcp/tree/python-reference) 分支，
-  main 中的兼容源码与差分测试也继续保留。
+### 一行命令安装（推荐）
 
-### Rust binary（推荐）
+Windows PowerShell：
 
-从 [最新 Release](https://github.com/Rousseal1984/twgga-image-mcp/releases/latest) 下载平台对应文件并
-核对 `SHA256SUMS`：
-
-```bash
-chmod +x /absolute/path/twgga-image-mcp   # macOS/Linux
-TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
-/absolute/path/twgga-image-mcp install --yes
+```powershell
+irm https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/scripts/install.ps1 | iex
 ```
 
-`install` 会把当前 binary 原子复制到稳定的 per-user data-local 目录，再让 Codex/Claude 指向该
-副本；配置不会指向仓库的 `target/release`，移动仓库或 `cargo clean` 不会使 MCP 失效：
-
-- macOS：`~/Library/Application Support/twgga-image-mcp/bin/twgga-image-mcp`
-- Linux：`~/.local/share/twgga-image-mcp/bin/twgga-image-mcp`
-- Windows：`%LOCALAPPDATA%\twgga-image-mcp\bin\twgga-image-mcp.exe`
-
-Rust CLI：
+macOS / Linux：
 
 ```bash
-twgga-image-mcp                 # 等同 serve，STDIO MCP
-twgga-image-mcp serve
+curl -fsSL https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/scripts/install.sh | sh
+```
+
+脚本会识别当前平台，从最新 Release 下载程序，用该 Release 的 `SHA256SUMS` 校验，再执行程序自带的 `install --yes`。安装器默认写入 Claude Code（`~/.claude.json`）和 Codex（`~/.codex/config.toml`）的 `twgga-image` 配置。脚本源码在 [`scripts/install.ps1`](scripts/install.ps1) 和 [`scripts/install.sh`](scripts/install.sh)，可以先看再运行。
+
+首次安装时如果还没有保存过 Key，安装器会在终端里提示输入一次，输入内容不显示。只配置 Codex 时：
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Rousseal1984/twgga-image-mcp/main/scripts/install.sh | sh -s -- --no-claude
+```
+
+Claude Desktop 的普通对话模式使用单独的配置文件，安装器不会自动写入，见[使用教程](docs/MCP使用教程.md)。
+
+### 手动下载
+
+从 [最新 Release](https://github.com/Rousseal1984/twgga-image-mcp/releases/latest) 下载对应平台的文件，核对 `SHA256SUMS` 后运行：
+
+```powershell
+# Windows PowerShell
+.\twgga-image-mcp-windows-x86_64.exe install --yes
+```
+
+```bash
+# macOS / Linux
+chmod +x ./twgga-image-mcp-macos-arm64
+./twgga-image-mcp-macos-arm64 install --yes
+```
+
+`install` 会把程序复制到当前用户的固定位置，再让客户端指向这份副本。之后移动或删除下载的文件都不影响 MCP。
+
+| 平台 | 安装位置 |
+|---|---|
+| Windows | `%LOCALAPPDATA%\twgga-image-mcp\bin\twgga-image-mcp.exe` |
+| macOS | `~/Library/Application Support/twgga-image-mcp/bin/twgga-image-mcp` |
+| Linux | `~/.local/share/twgga-image-mcp/bin/twgga-image-mcp` |
+
+常用命令：
+
+```bash
+twgga-image-mcp                       # 等同 serve，STDIO MCP
 twgga-image-mcp install --yes --no-claude
-twgga-image-mcp install --yes --binary-path /path/to/downloaded/binary
-twgga-image-mcp install --yes --dev --binary-path "$PWD/target/release/twgga-image-mcp"
-twgga-image-mcp reset --yes
-twgga-image-mcp doctor
+twgga-image-mcp reset --yes           # 只删除 twgga-image 这一节配置
+twgga-image-mcp doctor                # 检查配置与运行条件
+twgga-image-mcp credentials set       # 更换 Key，隐藏输入
+twgga-image-mcp credentials authorize # macOS 授权已有 Key
 twgga-image-mcp version
 ```
 
-源码开发时可显式配置已编译 binary：
-
-```bash
-cargo build --release
-TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
-target/release/twgga-image-mcp install --yes --dev \
-  --binary-path "$PWD/target/release/twgga-image-mcp"
-```
-
-### Python reference（保留/回滚）
-
-```bash
-git clone --branch python-reference --depth 1 \
-  https://github.com/Rousseal1984/twgga-image-mcp.git twgga-image-mcp-python
-cd twgga-image-mcp-python
-python install.py
-```
-
-非交互：
-
-```bash
-TWGGA_API_KEY=sk-... \
-TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
-python install.py --yes --runtime python
-```
-
-main 中的 `install.py` 只作为兼容/回滚工具；新安装应使用 Rust binary 自带的 `install`。
-Python installer 会备份并合并 Claude/Codex 配置，`--reset` 只删除 `twgga-image` 节。
-
-### macOS Keychain
-
-原 Keychain launcher 保留用于 Python 回滚。Rust binary 本身也能在启动时按 service/account 从
-macOS Keychain 取 key，因此稳定 binary 可作为纯 `command`，不再需要 shell wrapper：
-
-```bash
-security add-generic-password \
-  -U -a "$USER" -s ai.twggaapi.mcp \
-  -l "Twgga Image MCP API Key" \
-  -T /usr/bin/security -w
-```
-
-```toml
-[mcp_servers.twgga-image]
-command = "/Users/you/Library/Application Support/twgga-image-mcp/bin/twgga-image-mcp"
-args = []
-
-[mcp_servers.twgga-image.env]
-TWGGA_KEYCHAIN_SERVICE = "ai.twggaapi.mcp"
-TWGGA_KEYCHAIN_ACCOUNT = "your-macos-account"
-TWGGA_SAVE_DIR = "/Users/you/Pictures/twgga-out"
-TWGGA_SAVE_DIR_ROOT = "/Users/you/Pictures/twgga-out"
-```
-
-Codex 桌面、CLI 和 IDE 扩展共享 `~/.codex/config.toml`；修改后重启客户端。
-
-### 验证与回滚
-
-安装后让客户端调用 `server_info`，确认 `available_models`、base URL、save root 和
-`api_key_configured`。Rust 还可先运行：
-
-```bash
-twgga-image-mcp doctor
-python tests/smoke_local.py --proto \
-  --server-command '/absolute/path/twgga-image-mcp'
-```
-
-明确回滚到 Python：
-
-```bash
-TWGGA_API_KEY=sk-... \
-TWGGA_SAVE_DIR="$HOME/Pictures/twgga-out" \
-python install.py --yes --runtime python
-```
-
-完整迁移/backup 恢复说明见 [docs/migration-from-python.md](docs/migration-from-python.md)。
-
 ---
 
-## Size 规则
+## API Key 保存在哪
 
-image2 路径：
+Key 不会写进 Claude Code、Codex 或 Desktop 的配置文件，而是保存在系统自带的安全凭据库里，MCP 每次启动时自己读取：
 
-- W/H 必须是 16 的倍数
-- 最长边不超过 3840；长宽比不超过 3:1
-- 总像素必须在 655,360 到 8,294,400 之间
-- 2K/4K 强制 `n=1` 并加跨进程锁，避免多个 MCP 实例同时把并发打满
-
-推荐 size：
-
-| 档位 | 推荐值 |
+| 平台 | 保存位置 |
 |---|---|
-| 1K | `1024x1024`, `1280x720`, `720x1280`, `1024x1536`, `1536x1024` |
-| 2K | `2048x2048`, `2048x1152`, `1152x2048` |
-| 4K | `3840x2160`, `2160x3840` |
+| Windows | 凭据管理器（控制面板 → 凭据管理器 → Windows 凭据），条目名 `image2-api-key.twgga-image-mcp` |
+| macOS | 钥匙串，service=`twgga-image-mcp`、account=`image2-api-key` |
+| Linux | Secret Service |
 
-## 尺寸能力矩阵 / Size capability
-
-本站单线路实测：可生成与编辑，但**任何尺寸都不保证精确返回**——`size` 只是建议，实际像素以 `saved.actual_size` 为准。参考图 4K 可直接请求，不做本地拒绝。
-
-| 场景 | 可靠性 | 实际输出 |
-|---|---|---|
-| 1K 纯文生图/编辑 | 可用 | 两模型 1024² 均已实测；实际像素见 `saved.actual_size` |
-| 2K/4K 纯文生图（`image_generate`） | 可用 | 照常请求，实际像素以 `saved.actual_size` 为准 |
-| 单张参考图 2K/4K（`image_edit`） | 可用 | 统一走 `/v1/images/edits`；实测 2048×1152 / 3840×2160 精确返回 |
-| 多图参考 1K/2K/4K（`image_multi_reference`） | 可用 | 走 `/v1/images/edits` + `image[]`；核对 `saved.actual_size` |
-| 批量编辑 1K/2K/4K（`image_batch_edit`） | 可用 | 1K 最多 5 并发；≥2K 逐张串行，避免打爆账号池 |
-
-说明：
-
-- `/v1/images/edits` 是TWGGA真正消费输入图的端点。当前单图参考的 1024²、2048×1152、3840×2160 edits 已通过实测。
-- 旧的 `generations + reference_image` 和 `generations + image_urls` 路径已经废弃；所有 Image2 参考图请求都不会再转回旧路径或 `/v1/chat/completions`。
-- 参考图 4K 可直接请求；2K/4K 使用进程内 + 跨进程双层锁串行发出请求。
+- 安装器先看环境变量 `TWGGA_API_KEY`，再看系统凭据库；都没有时在终端提示输入一次。Key 需以 `sk-` 开头。
+- 旧版配置里如果有明文 `TWGGA_API_KEY`，安装器会先把它存进凭据库，再从配置里删掉。
+- 环境变量 `TWGGA_API_KEY` 非空时优先使用它，不访问凭据库。
+- 更换 Key：运行安装位置下的 `twgga-image-mcp credentials set`，不改客户端配置。
+- macOS 后台启动只做无交互读取，钥匙串锁定或未授权时不会弹窗。MCP 照常连接，`server_info.credentials.status` 会说明状态，生图时会提示运行 `credentials authorize`。
 
 ---
 
-## 环境变量
+## 升级
+
+已安装的 MCP 不会自动更新。重新运行上面的一行安装命令即可，已保存的 Key 不用重新输入。手动下载的方式同样是用新程序再跑一次 `install --yes`。
+
+完成后重新连接 MCP，调用 `server_info` 确认 `version` 已是新版本。客户端启动的是安装位置下的那份程序，只替换下载的文件不会生效。
+
+---
+
+## 配置
 
 | 变量 | 默认值 | 说明 |
 |---|---|---|
-| `TWGGA_API_KEY` | 空 | TWGGA image2 token |
-| `TWGGA_BASEURL` | `https://twgga.work` | TWGGA base URL |
-| `TWGGA_MODEL` | `gpt-image-2` | image2 默认模型 |
+| `TWGGA_API_KEY` | 空 | 设置后优先于系统凭据库 |
+| `TWGGA_BASEURL` | `https://twgga.work` | 接口地址，启动后不可通过工具参数修改 |
+| `TWGGA_MODEL` | `gpt-image-2` | 默认模型 |
 | `TWGGA_SAVE_DIR` | `~/Pictures/twgga-out` | 默认输出目录 |
-| `TWGGA_SAVE_DIR_ROOT` | 同输出目录 | 输出安全根目录 |
-| `TWGGA_INPUT_ROOT` | 空（不限制） | 可选输入图片白名单根；启用后阻止路径/符号链接逃逸 |
-| `TWGGA_USE_SHELL_PROXY` | `0` | 设为 `1` 才读取 shell 代理 |
-| `TWGGA_RESPONSE_FORMAT` | `auto` | `auto`（url→b64）、`url` 或 `b64_json` |
-| `TWGGA_TRUSTED_DOWNLOAD_HOSTS` | `oss.filenest.top` | 可信 CDN host，逗号分隔 |
-| `TWGGA_ALLOW_FAKE_IP_DOWNLOAD` | `1` | 仅 trusted host 可放行 198.18.0.0/15 fake-ip |
+| `TWGGA_SAVE_DIR_ROOT` | 同输出目录 | 输出安全根目录；会话记录保存在它下面的 `.twgga-sessions` |
+| `TWGGA_INPUT_ROOT` | 空（不限制） | 可选的输入图片白名单根目录 |
+| `TWGGA_KEYCHAIN_SERVICE` / `TWGGA_KEYCHAIN_ACCOUNT` | `twgga-image-mcp` / `image2-api-key` | 自定义凭据条目 |
+| `TWGGA_USE_SHELL_PROXY` | `0` | 设为 `1` 才读取终端代理设置 |
+| `TWGGA_RESPONSE_FORMAT` | `auto` | `auto`（先 url，失败改 b64_json）、`url` 或 `b64_json` |
+| `TWGGA_ALLOW_FAKE_IP_DOWNLOAD` | `1` | 仅可信下载域名可放行 198.18.0.0/15 fake-ip |
 
-路径在 server 启动时只解析一次：相对 `TWGGA_SAVE_DIR` 和 tool `save_dir` 都以 save root 为基准；
-设置 `TWGGA_INPUT_ROOT` 时，相对输入路径以 input root 为基准，否则以启动时捕获的 cwd 为基准。
-只展开精确的 `~`、`~/...`、Windows `~\...`，`~someone` 会被拒。Python/Rust 兼容期共用
-`~/.cache/twgga-image/bigsize.lock`。
-
-## 手动配置
-
-Claude Code:
+手动配置 Claude Code 时，`command` 指向安装位置下的程序，`env` 里不要放 Key：
 
 ```json
 {
   "mcpServers": {
     "twgga-image": {
-      "command": "/absolute/path/twgga-image-mcp",
+      "command": "C:\\Users\\you\\AppData\\Local\\twgga-image-mcp\\bin\\twgga-image-mcp.exe",
       "args": [],
       "env": {
-        "TWGGA_SAVE_DIR": "/Users/you/Pictures/twgga-out",
-        "TWGGA_SAVE_DIR_ROOT": "/Users/you/Pictures/twgga-out"
+        "TWGGA_SAVE_DIR": "C:\\Users\\you\\Pictures\\twgga-out",
+        "TWGGA_SAVE_DIR_ROOT": "C:\\Users\\you\\Pictures\\twgga-out"
       }
     }
   }
 }
 ```
 
-Codex:
-
-```toml
-[mcp_servers.twgga-image]
-command = "/absolute/path/twgga-image-mcp"
-args = []
-
-[mcp_servers.twgga-image.env]
-TWGGA_SAVE_DIR = "/Users/you/Pictures/twgga-out"
-TWGGA_SAVE_DIR_ROOT = "/Users/you/Pictures/twgga-out"
-```
-
-不要手工把 Windows 路径拼进 TOML 字符串。Rust installer 使用 `toml_edit` AST，临时写入后会
-再用 TOML parser 校验 `command`/`args`/env 的 PathBuf round-trip；单引号 literal string 和正确
-转义的双引号 basic string 都合法，关键是 parser 回读值完全一致。API key 不持久化到上述
-JSON/TOML；由客户端进程环境、macOS Keychain 或 tool 的既有 `api_key` 参数提供。
-
-迁移期若要手动使用 Python reference，把 command 改为 Python、args 改为绝对
-`server.py` 路径即可；五工具 schema 保持相同。
+Codex 的 `~/.codex/config.toml` 同理，写在 `[mcp_servers.twgga-image]` 和 `[mcp_servers.twgga-image.env]` 下。不要手工把 Windows 路径拼进 TOML 字符串，优先用安装器写入。
 
 ---
 
-## 性能 / 压力测试
-
-Rust/Python 同机启动与 RSS 原始数据见 [docs/rust-benchmark.md](docs/rust-benchmark.md)。当前 arm64
-Mac 的 Rust idle RSS 中位数为 9,504 KiB，Python 为 66,080 KiB。Linux x86_64、macOS
-x86_64/arm64 与 Windows x86_64 的原生构建和测试已在
-[CI run 32631626392](https://github.com/Rousseal1984/twgga-image-mcp/actions/runs/32631626392)
-通过；本机 RSS 数据仍只代表报告所列的 Apple Silicon 测试环境。
-
-`tests/` 下两个独立脚本，直接 in-process import `server.py` 调 `image_generate`，不走 stdio MCP（避免子进程开销污染样本）。真实请求需要有效 key，并且只有精确设置 `TWGGA_RUN_LIVE_TESTS=1` 才会启动；不带 key 用 `--dry-run` 也能验证脚本/导入/校验链路。
-
-报告默认落到 `tests/reports/<title>_<ts>.{json,md}`，已被 `.gitignore` 排除。生成的图扔到 `/tmp/twgga-bench/<label>/`，不会污染你的 `~/Pictures/twgga-out`。
-
-### 性能基线 `tests/perf_bench.py`
-
-串行跑 `gpt-image-2` 在不同 `size` 下的 `image_generate`，记录单次延迟、actual_size 偏差、保存后字节数。
+## 开发与验证
 
 ```bash
-# smoke（默认）：两个 Image2 模型各 1 张；必须显式允许 live/付费请求
-TWGGA_RUN_LIVE_TESTS=1 python tests/perf_bench.py
-
-# 完整 sweep, 每组重复 3 次
-TWGGA_RUN_LIVE_TESTS=1 python tests/perf_bench.py --full --repeat 3
-
-# 干跑 (不打 API, 只验证脚本链路)
-python tests/perf_bench.py --dry-run
+cargo fmt --all --check
+cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+cargo test --locked --workspace --all-targets --all-features
+cargo xtask smoke
 ```
 
-报告 markdown 表头：`group | n | ok | fail | rate | p50_ms | p95_ms | mean_ms | actual_match`。`actual_match` 是图片 header 读出的实际像素严格等于请求 size 的比例；不要假定后端一定遵守自定义尺寸。
+离线测试全部使用本地 HTTP 替身，不读取个人 Key，不产生图片费用。付费在线验收需要显式开关，见 [Rust 开发与验收](docs/rust-only-development.md)。
 
-### 并发压力 `tests/stress_concurrent.py`
-
-验证：
-1. 1K 单进程多并发 → 进程内不卡，吞吐近似线性
-2. ≥2K 多进程并发 → 进程内 `asyncio.Semaphore(1)` + 跨进程 `flock` 双层锁串行
-3. CF 524 / 5xx → 重试/fail-fast 策略
-4. `--model` 仅接受 `gpt-image-2`
-
-```bash
-# in-process 并发 (默认 smoke, image2 1K x 3)
-TWGGA_RUN_LIVE_TESTS=1 python tests/stress_concurrent.py
-
-# 验证 ≥2K 锁串行
-TWGGA_RUN_LIVE_TESTS=1 python tests/stress_concurrent.py --size 2048x2048 --concurrency 4
-
-# 跨进程模式 (spawn N 个子进程, 模拟多 Claude Code 窗口)
-TWGGA_RUN_LIVE_TESTS=1 python tests/stress_concurrent.py --mode multiprocess --concurrency 3 --size 2048x2048
-
-```
-
-报告关键派生指标：
-
-| 指标 | 含义 |
-|---|---|
-| `total_wall_ms` | 整批耗时（从 gather 到全部返回） |
-| `serial_estimate_ms` | 所有成功请求 wall_ms 之和（串行下界） |
-| `concurrency_efficiency` | `total_wall_ms / serial_estimate_ms`。≈ 1 → 强串行（锁生效）；≈ 1/N → 强并发；中间 → 部分排队 |
-| `lock_wait_observed` | notes 里出现 “等待跨进程 ≥2K 锁” 的请求数（>2s 才记） |
-
-> 提醒：Image2 真实并发会按TWGGA后台线路限流计费，跑 `--concurrency` ≥ 3 之前先确认账户额度。dry-run / 401 路径不计费。
-
-### Rust 原生真实 2K/4K 压力矩阵
-
-`tests/contract/test_live_rust_highres_stress.py` 会同时启动 5 个独立 Rust MCP 进程，请求
-2K 横/竖/方图和 4K 横/竖图。测试要求它们共享同一把生产跨进程锁，并逐项验证
-`n` 强制为 1、实际像素、stdout 和敏感日志。为避免误消费额度，必须同时
-启用三个 live gate：
-
-```bash
-TWGGA_RUN_LIVE_TESTS=1 \
-TWGGA_RUN_LIVE_STRESS=1 \
-TWGGA_RUN_LIVE_HIGHRES_STRESS=1 \
-TWGGA_LIVE_HIGHRES_STRESS_REPORT=/tmp/twgga-rust-live-highres-stress.json \
-  .venv/bin/python -m pytest -q \
-  tests/contract/test_live_rust_highres_stress.py
-```
-
-2026-08-23 的真实 v0.3.0 结果为 5/5 成功、5 种 requested/actual size 全部严格相等、4 个
-排队进程均返回锁等待 note，总 wall time 360.115 秒。凭据没有写入报告，临时输出在测试结束后删除。
-
-### 离线 contract / 差分测试
-
-先构建 Rust，然后运行相同 MCP STDIO 与本地 mock Twgga API 矩阵：
-
-```bash
-cargo build
-TWGGA_RUN_LIVE_TESTS=0 \
-  .venv/bin/python -m tests.contract.compare_parameter_matrix \
-  --output /tmp/twgga-parameter-matrix.json
-TWGGA_RUN_LIVE_TESTS=0 TWGGA_RUN_CONTRACT_TESTS=1 \
-  .venv/bin/python -m pytest -q \
-  tests/contract/test_path_refactor_baseline.py \
-  tests/contract/test_python_rust_differential.py \
-  tests/contract/test_latest_protocol.py
-```
-
-冻结的 42 项 size/model/quality/route 参数 nodeid、source hash 和执行结果会先做 before/after；随后
-38 个黑盒场景比较 tools schema、HTTP JSON/multipart、retry 顺序、URL/b64/data URL、
-SSRF、损坏图片、body cap、并发、文件冲突和实际落盘内容。mock 只监听 `127.0.0.1`，不调用
-真实生图 API。安全与兼容细节见：
-
-- [docs/rust-rewrite-design.md](docs/rust-rewrite-design.md)
-- [docs/rust-compatibility-matrix.md](docs/rust-compatibility-matrix.md)
-- [docs/rust-security-review.md](docs/rust-security-review.md)
-- [docs/migration-from-python.md](docs/migration-from-python.md)
+本项目跟随开源项目 [micu-image-mcp](https://github.com/Subaru486desuwa/micu-image-mcp)（MIT）同步，在其之上保留本站的差异：只有 `gpt-image-2` 一个模型，不按尺寸切换线路。

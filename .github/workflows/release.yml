@@ -1,15 +1,57 @@
-name: Release binaries
+name: Release Rust binaries
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["v[0-9]*"]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  TWGGA_RUN_LIVE_TESTS: "0"
 
 jobs:
+  validate:
+    name: Validate Rust main release
+    runs-on: ubuntu-latest
+    outputs:
+      notes: ${{ steps.release.outputs.notes }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Require a commit from main
+        shell: bash
+        run: |
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Manual release builds must run from main." >&2
+            exit 1
+          fi
+          git fetch --no-tags origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" FETCH_HEAD || {
+            echo "Release commit must be part of main; legacy branches cannot release." >&2
+            exit 1
+          }
+      - name: Validate package version and version-specific release notes
+        id: release
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            cargo xtask release-check --tag "$GITHUB_REF_NAME" --github-output "$GITHUB_OUTPUT"
+          else
+            cargo xtask release-check --github-output "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
@@ -29,14 +71,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      - run: python -m pip install -e .
-      - run: cargo test --locked --all-targets --all-features
+      - run: cargo build --locked --workspace
+      - run: cargo xtask source-audit
+      - run: cargo test --locked --workspace --all-targets --all-features
       - run: cargo build --locked --release --all-features
+      - run: cargo xtask smoke --binary ${{ matrix.binary }}
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
@@ -44,14 +85,17 @@ jobs:
           if-no-files-found: error
 
   checksums:
-    needs: build
+    needs: [validate, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          pattern: twgga-image-mcp-*
           path: artifacts
-      - name: Rename artifacts and generate SHA-256 checksums
+      - name: Stage only Rust binaries and generate SHA-256 checksums
         shell: bash
         run: |
           mkdir dist
@@ -60,15 +104,22 @@ jobs:
           cp artifacts/twgga-image-mcp-macos-arm64/twgga-image-mcp dist/twgga-image-mcp-macos-arm64
           cp artifacts/twgga-image-mcp-windows-x86_64/twgga-image-mcp.exe dist/twgga-image-mcp-windows-x86_64.exe
           cd dist
-          sha256sum * > SHA256SUMS
+          sha256sum twgga-image-mcp-* > SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: twgga-image-mcp-release
           path: dist/*
           if-no-files-found: error
-      - name: Attach files to GitHub release
+      - name: Publish Rust-only release assets
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/*
-          body_path: docs/releases/v0.4.0.md
+          fail_on_unmatched_files: true
+          files: |
+            dist/twgga-image-mcp-linux-x86_64
+            dist/twgga-image-mcp-macos-x86_64
+            dist/twgga-image-mcp-macos-arm64
+            dist/twgga-image-mcp-windows-x86_64.exe
+            dist/SHA256SUMS
+          body_path: ${{ needs.validate.outputs.notes }}
+          prerelease: ${{ needs.validate.outputs.prerelease == 'true' }}

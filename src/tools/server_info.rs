@@ -1,22 +1,18 @@
 use secrecy::ExposeSecret;
 use serde_json::Value;
 
-use crate::config::ResponseFormat;
+use crate::{config::ResponseFormat, domain::routing::SUPPORTED_IMAGE_MODELS};
 
 use super::{ToolEngine, ToolFailure};
 
 impl ToolEngine {
     pub fn server_info(&self) -> Result<Value, ToolFailure> {
-        let fixture: Value = serde_json::from_str(include_str!(
-            "../../tests/contract/fixtures/python/server-info.json"
-        ))
-        .map_err(|error| ToolFailure(format!("server_info contract fixture 无法解析: {error}")))?;
+        let fixture: Value = serde_json::from_str(include_str!("../contracts/server-info.json"))
+            .map_err(|error| ToolFailure(format!("Rust server_info contract 无法解析: {error}")))?;
         let mut info = fixture
             .pointer("/result/structuredContent")
             .cloned()
-            .ok_or_else(|| {
-                ToolFailure("server_info contract fixture 缺 structuredContent".into())
-            })?;
+            .ok_or_else(|| ToolFailure("Rust server_info contract 缺 structuredContent".into()))?;
         set_top(
             &mut info,
             "version",
@@ -29,28 +25,33 @@ impl ToolEngine {
         )?;
         set_top(
             &mut info,
-            "grok_base_url",
-            Value::String(self.config.grok_base_url.clone()),
-        )?;
-        set_top(
-            &mut info,
             "default_model",
             Value::String(self.config.default_model.clone()),
         )?;
         set_top(
             &mut info,
-            "grok_default_model",
-            Value::String(self.config.xai_model.clone()),
+            "available_models",
+            serde_json::json!(SUPPORTED_IMAGE_MODELS),
         )?;
-        let grok_size_mode = if matches!(
-            self.config.grok_size_mode.as_str(),
-            "backend" | "contain" | "cover" | "stretch"
-        ) {
-            self.config.grok_size_mode.clone()
-        } else {
-            "contain".into()
-        };
-        set_top(&mut info, "grok_size_mode", Value::String(grok_size_mode))?;
+        set_top(
+            &mut info,
+            "model_catalog",
+            model_catalog(&self.config.default_model, &self.config.default_edit_model),
+        )?;
+        set_nested(
+            &mut info,
+            "default_models",
+            "image_generate",
+            Value::String(self.config.default_model.clone()),
+        )?;
+        for tool in ["image_edit", "image_batch_edit", "image_multi_reference"] {
+            set_nested(
+                &mut info,
+                "default_models",
+                tool,
+                Value::String(self.config.default_edit_model.clone()),
+            )?;
+        }
         set_top(
             &mut info,
             "default_save_dir",
@@ -59,12 +60,18 @@ impl ToolEngine {
         set_top(
             &mut info,
             "api_key_configured",
-            Value::Bool(!self.config.api_key.expose_secret().is_empty()),
+            Value::Bool(!self.config.api_key.expose_secret().trim().is_empty()),
         )?;
         set_top(
             &mut info,
-            "grok_api_key_configured",
-            Value::Bool(!self.config.grok_api_key.expose_secret().is_empty()),
+            "credentials",
+            serde_json::json!({
+                "status": self.config.credential_status,
+                "macos_background_ui": "forbidden",
+                "recovery": if self.config.api_key.expose_secret().trim().is_empty() {
+                    Some(crate::credentials::CREDENTIAL_RECOVERY)
+                } else { None },
+            }),
         )?;
         let response_format = match self.config.response_format {
             ResponseFormat::Auto => "auto",
@@ -132,10 +139,22 @@ impl ToolEngine {
     }
 }
 
+/// Manually maintained Images-protocol model directory. Never performs network I/O.
+fn model_catalog(default_generate: &str, default_edit: &str) -> Value {
+    serde_json::json!({
+        "source": "manual",
+        "refresh_status": "not_applicable",
+        "last_success_unix": null,
+        "ttl_seconds": null,
+        "capabilities": "Manually maintained Images protocol models; upstream availability and per-model edit capabilities are not verified",
+        "default_generate_available": SUPPORTED_IMAGE_MODELS.contains(&default_generate),
+        "default_edit_available": SUPPORTED_IMAGE_MODELS.contains(&default_edit)
+    })
+}
+
 fn path_text(path: &std::path::Path, context: &str) -> Result<String, ToolFailure> {
-    // 与安装器共用同一套显示归一化：Windows 上 canonicalize 出来的扩展前缀
-    // 不该出现在给客户看的字段里，Python 侧也不会带它。
-    crate::fs::display::display_path(path)
+    path.to_str()
+        .map(str::to_owned)
         .ok_or_else(|| ToolFailure(format!("{context} 不是合法 Unicode，无法写入 server_info")))
 }
 
@@ -184,7 +203,7 @@ mod tests {
         config::{Config, test_paths},
         fs::output_store::OutputStore,
         fs::response_output::OutputSaver,
-        http::client::{ApiResponse, HttpExecutor, RetryOptions},
+        http::client::{HttpExecutor, RetryOptions},
         http::download::SystemResolver,
         providers::{EditRequest, GenerateRequest, ImageProvider},
     };
@@ -201,7 +220,7 @@ mod tests {
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
+        ) -> crate::providers::ImageResponse {
             panic!("server_info must not call provider")
         }
         async fn edit(
@@ -210,7 +229,7 @@ mod tests {
             _key: &SecretString,
             _retry: RetryOptions,
             _notes: &mut Vec<String>,
-        ) -> ApiResponse {
+        ) -> crate::providers::ImageResponse {
             panic!("server_info must not call provider")
         }
     }
@@ -243,11 +262,11 @@ mod tests {
         let info = engine
             .server_info()
             .unwrap_or_else(|error| panic!("{error}"));
-        // 断言的是「报出来的就是本 crate 的版本」，而不是某个写死的数字 ——
-        // 写死会让每次发版都莫名其妙地红一次，而它本来要守的契约与版本号具体是多少无关。
         assert_eq!(info["version"], env!("CARGO_PKG_VERSION"));
         assert_eq!(info["available_models"], serde_json::json!(["gpt-image-2"]));
-        assert_eq!(info["grok_channel_enabled"], false);
+        assert_eq!(info["default_models"]["image_generate"], "gpt-image-2");
+        assert_eq!(info["default_models"]["image_edit"], "gpt-image-2");
+        assert!(info.get("grok_channel_enabled").is_none());
         assert_eq!(info["api_key_configured"], true);
         assert!(info["retry_policy"]["concurrency_2k_4k"].as_str().is_some_and(|text| text.contains("tokio::sync::Semaphore") && text.contains("fs4")));
         assert!(
@@ -264,5 +283,49 @@ mod tests {
                 .as_str()
                 .is_some_and(|text| text.contains("bigsize.lock") && text.contains("Python/Rust"))
         );
+    }
+
+    #[test]
+    fn documented_output_format_values_match_model_routes() {
+        let fixture: Value = serde_json::from_str(include_str!("../contracts/server-info.json"))
+            .unwrap_or_else(|error| panic!("{error}"));
+        let documented = fixture
+            .pointer("/result/structuredContent/size_rules/output_format_values_by_model")
+            .and_then(Value::as_object)
+            .unwrap_or_else(|| panic!("contract lacks output_format_values_by_model"));
+        assert!(
+            SUPPORTED_IMAGE_MODELS
+                .iter()
+                .all(|model| documented.contains_key(*model))
+        );
+        for (model, values) in documented {
+            assert_eq!(
+                values,
+                &serde_json::json!(crate::domain::routing::output_format_values(model)),
+                "{model}"
+            );
+        }
+    }
+
+    #[test]
+    fn documented_quality_values_match_model_routes() {
+        let fixture: Value = serde_json::from_str(include_str!("../contracts/server-info.json"))
+            .unwrap_or_else(|error| panic!("{error}"));
+        let documented = fixture
+            .pointer("/result/structuredContent/size_rules/quality_values_by_model")
+            .and_then(Value::as_object)
+            .unwrap_or_else(|| panic!("contract lacks quality_values_by_model"));
+        assert!(
+            SUPPORTED_IMAGE_MODELS
+                .iter()
+                .all(|model| documented.contains_key(*model))
+        );
+        for (model, values) in documented {
+            assert_eq!(
+                values,
+                &serde_json::json!(crate::domain::routing::quality_values(model)),
+                "{model}"
+            );
+        }
     }
 }
