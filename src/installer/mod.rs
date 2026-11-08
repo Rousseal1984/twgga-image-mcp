@@ -75,7 +75,14 @@ pub fn install(options: InstallOptions) -> Result<(), InstallError> {
             .canonicalize()
             .map_err(|error| InstallError::BinarySource(error.to_string()))?
     } else {
-        binary::install_binary(selected_source, &paths.install_binary)?
+        let report = binary::install_binary_with_report(selected_source, &paths.install_binary)?;
+        if report.parked_running_binary {
+            write_status(
+                "旧版程序正被客户端运行，已把它挪开让新版就位；重启客户端（或重连 MCP）后生效"
+                    .into(),
+            )?;
+        }
+        report.path
     };
     let launch = ClientLaunchSpec::new(
         command.clone(),
