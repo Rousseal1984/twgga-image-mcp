@@ -8,6 +8,15 @@ pub const SMALL_RETRY_DELAYS: [Duration; 2] = [Duration::from_secs(4), Duration:
 pub const BIG_RETRY_DELAY: Duration = Duration::from_secs(60);
 pub const RETRY_JITTER_MAX: Duration = Duration::from_secs(2);
 
+/// 网关补试的耗时窗口：这次尝试在 30 秒内就失败，说明上游还没来得及出图，补一次不会让我们
+/// 为两张图付钱。实测一次成功的生图要 17–130 秒，所以慢到这个窗口之外的失败，可能已经把图
+/// 算了一半，不能再补。
+pub const FAST_GATEWAY_WINDOW: Duration = Duration::from_secs(30);
+
+/// Cloudflare 系的边缘错误码：502/503/504 是标准网关错误，520–527 是 Cloudflare 自己的边缘
+/// 失败。它们都意味着请求没落到生图上游、或上游没交出图，而不是「上游已经出了一张图再回错」。
+const GATEWAY_STATUS_CODES: [u16; 10] = [502, 503, 504, 520, 521, 522, 523, 524, 525, 527];
+
 pub fn parse_retry_after(_headers: &HeaderMap, _now: SystemTime) -> Option<Duration> {
     let value = _headers
         .get(reqwest::header::RETRY_AFTER)?
@@ -80,6 +89,26 @@ pub fn retryable_status(status: u16) -> bool {
     )
 }
 
+/// 1K 小图的一次性网关补试：状态码是网关类、且这次尝试在 `FAST_GATEWAY_WINDOW` 内就失败时，
+/// 给出与小请求重试一致的第一档等待（4 秒 + 抖动）。
+///
+/// `attempt_index >= 1` 表示已经补过一次，直接放弃：只补一次。网关已经 5xx 了，再一次 60 秒
+/// 级别的等待只会让客户多等一轮，而第二张小图是否计费没人保证。
+pub fn gateway_retry_delay(
+    status: u16,
+    elapsed: Duration,
+    attempt_index: usize,
+    jitter: Duration,
+) -> Option<Duration> {
+    if attempt_index >= 1
+        || !GATEWAY_STATUS_CODES.contains(&status)
+        || elapsed > FAST_GATEWAY_WINDOW
+    {
+        return None;
+    }
+    Some(SMALL_RETRY_DELAYS[0] + jitter.min(RETRY_JITTER_MAX))
+}
+
 #[cfg(test)]
 mod tests {
     use reqwest::header::{HeaderMap, HeaderValue, RETRY_AFTER};
@@ -144,6 +173,33 @@ mod tests {
         assert_eq!(retry_delay(503, &empty, 1, true, now, Duration::ZERO), None);
         assert_eq!(retry_delay(524, &empty, 0, true, now, Duration::ZERO), None);
         assert!(retry_delay(524, &empty, 0, false, now, Duration::ZERO).is_some());
+    }
+
+    #[test]
+    fn gateway_retry_covers_fast_gateway_failures_only() {
+        let fast = Duration::from_secs(9);
+        let slow = Duration::from_secs(31);
+        for status in GATEWAY_STATUS_CODES {
+            assert!(
+                gateway_retry_delay(status, fast, 0, Duration::ZERO).is_some(),
+                "{status}"
+            );
+        }
+        // 与现有小请求重试的第一档节奏一致：4 秒 + 抖动（抖动有上限）。
+        assert_eq!(
+            gateway_retry_delay(504, fast, 0, Duration::from_millis(250)),
+            Some(Duration::from_millis(4_250))
+        );
+        assert_eq!(
+            gateway_retry_delay(504, fast, 0, Duration::from_secs(9)),
+            Some(Duration::from_millis(6_000))
+        );
+        // 31 秒的 504 可能已经把图算了一半，补试等于冒付两张图的钱。
+        assert_eq!(gateway_retry_delay(504, slow, 0, Duration::ZERO), None);
+        // 4xx 不是网关问题，重试没有意义。
+        assert_eq!(gateway_retry_delay(400, fast, 0, Duration::ZERO), None);
+        // 最多补一次。
+        assert_eq!(gateway_retry_delay(504, fast, 1, Duration::ZERO), None);
     }
 
     #[test]

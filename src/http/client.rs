@@ -2,7 +2,7 @@ use std::{
     collections::HashMap,
     net::SocketAddr,
     sync::Arc,
-    time::{Duration, SystemTime},
+    time::{Duration, Instant, SystemTime},
 };
 
 use async_trait::async_trait;
@@ -25,7 +25,10 @@ use crate::{
     fs::lock::BigRequestGate,
     http::download::ResolvedDownload,
     http::response::{error_detail, model_rejected, sanitize_sensitive},
-    http::retry::{NETWORK_RETRY_DELAY, RETRY_JITTER_MAX, effective_retry_status, retry_delay},
+    http::retry::{
+        NETWORK_RETRY_DELAY, RETRY_JITTER_MAX, effective_retry_status, gateway_retry_delay,
+        retry_delay,
+    },
 };
 
 pub const DOWNLOAD_REQUEST_TIMEOUT: Duration = Duration::from_secs(120);
@@ -211,7 +214,11 @@ impl HttpExecutor {
         options: RetryOptions,
         notes: &mut Vec<String>,
     ) -> ApiResponse {
+        // 每次尝试单独计时：网关补试只在上游明显还没开始出图时才做，判定依据就是这次尝试
+        // 花了多久，所以网络错误补试之后要重新起表。
+        let mut attempt_started = Instant::now();
         let mut response = self.attempt(factory, key).await;
+        let mut elapsed = attempt_started.elapsed();
         let mut attempt_number = 1_usize;
         if response.status == 0 {
             append_retry_note(
@@ -222,10 +229,28 @@ impl HttpExecutor {
                 &error_detail(&response.body, &[key.expose_secret()]),
             );
             tokio::time::sleep(NETWORK_RETRY_DELAY).await;
+            attempt_started = Instant::now();
             response = self.attempt(factory, key).await;
+            elapsed = attempt_started.elapsed();
             attempt_number += 1;
         }
+        // 走不到重试计划（`enabled=false`）的 1K/512 请求：`enabled` 的语义与取值都不动，
+        // 这里只给网关类快速失败补一次，见 `gateway_retry_delay`。
         if !options.enabled {
+            if options.gateway_retry {
+                let jitter = Duration::from_secs_f64(rand::random_range(
+                    0.0_f64..=RETRY_JITTER_MAX.as_secs_f64(),
+                ));
+                // 这条分支一次调用只补一次，补试计数恒为 0（`attempt_index >= 1` 时该函数
+                // 返回 None，所以补出来的那一次也不会再补）。
+                if let Some(delay) = gateway_retry_delay(response.status, elapsed, 0, jitter) {
+                    let detail = error_detail(&response.body, &[key.expose_secret()]);
+                    append_retry_note(notes, response.status, delay, attempt_number + 1, &detail);
+                    tokio::time::sleep(delay).await;
+                    // 补试结果直接返回，不再进后面的 while 循环：最多就这一次。
+                    return self.attempt(factory, key).await;
+                }
+            }
             return response;
         }
         let mut retry_attempt = 0_usize;

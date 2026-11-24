@@ -48,8 +48,14 @@ pub fn output_format_values(_model: &str) -> &'static [&'static str] {
 /// Upstream retry scheduling chosen by the route; the HTTP executor only applies it.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RetryOptions {
+    /// 「任何失败都按 retry_delay 重试」。本站只有 ≥2K 会打开它；1K 恒为 false，语义与取值
+    /// 都不动（改它会连带改变 400/429 这类失败的重试节奏）。
     pub enabled: bool,
     pub big_size: bool,
+    /// 网关类快速失败（502/503/504/520–527，且这次尝试在 30 秒内就失败）时补试一次。
+    /// 单独一个开关是刻意的：它只覆盖「上游明显还没开始出图」这一种失败，不扩大 `enabled`
+    /// 的含义。判定与等待时长见 `http::retry::gateway_retry_delay`。
+    pub gateway_retry: bool,
 }
 
 /// How one supported model runs at one validated size: the effective model,
@@ -95,6 +101,10 @@ impl ModelRoute {
         RetryOptions {
             enabled: is_quality_model(&self.model) || big_size,
             big_size,
+            // 本站 is_quality_model 恒为 false，所以 1K 请求的 enabled 恒为 false，任何失败
+            // 都不重试——包括 504，客户会直接看到一整页网关 HTML。网关类失败另走一次性
+            // 补试（只在快速失败时），这条路上 `enabled` 保持原样。
+            gateway_retry: true,
         }
     }
 
@@ -507,7 +517,15 @@ mod tests {
         for (size, enabled, big_size, parallel) in table {
             let route = route(STANDARD_MODEL, size);
             assert_eq!(route.model(), STANDARD_MODEL, "{size}: 不按尺寸切模型");
-            assert_eq!(route.retry(), RetryOptions { enabled, big_size }, "{size}");
+            assert_eq!(
+                route.retry(),
+                RetryOptions {
+                    enabled,
+                    big_size,
+                    gateway_retry: true,
+                },
+                "{size}"
+            );
             assert_eq!(route.parallel_limit(), parallel, "{size}");
             assert_eq!(
                 route.response_formats(&configured).collect::<Vec<_>>(),
@@ -515,6 +533,11 @@ mod tests {
                 "{size}"
             );
         }
+        // 1K 的 enabled 保持 false（不按 retry_delay 重试任何失败），网关补试单独打开：
+        // 504 这类快速失败由它兜一次，客户不再直接看到网关返回的整页 HTML。
+        let one_k = route(STANDARD_MODEL, "1024x1024").retry();
+        assert!(!one_k.enabled, "1K 仍然走不到 retry_delay");
+        assert!(one_k.gateway_retry, "1K 路由的网关补试为 true");
     }
 
     #[test]
